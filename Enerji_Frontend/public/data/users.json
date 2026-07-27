@@ -1,0 +1,16 @@
+[
+  {
+    "email": "admin@edys.com",
+    "password": "123",
+    "name": "Ahmet Yılmaz",
+    "role": "admin",
+    "title": "Sistem Yöneticisi"
+  },
+  {
+    "email": "operator@edys.com",
+    "password": "123",
+    "name": "Ayşe Demir",
+    "role": "operator",
+    "title": "Tesis Operatörü"
+  }
+]

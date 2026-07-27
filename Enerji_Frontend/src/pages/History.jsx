@@ -1,15 +1,16 @@
 import { useState, useMemo } from 'react';
-import { Search, ArrowDown, ArrowUp, X, Filter } from 'lucide-react';
+import { Search, ArrowDown, ArrowUp, X, Filter, User } from 'lucide-react'; // Ekledim: Operatör isminin yanına koymak için User ikonunu dahil ettim.
 
 // --- STATİK (MOCK) VERİLER ---
 const mockTransactions = [
-  { id: 'TX-1065', type: 'Deşarj', amount: 3.00, loss: 0.15, efficiency: 95, price: 1938.00, soc: 4.8, date: '23.07.2026 10:59:44' },
-  { id: 'TX-1064', type: 'İptal', amount: 3.00, loss: 0.00, efficiency: 95, price: 1938.00, soc: 7.8, date: '23.07.2026 10:59:42' },
-  { id: 'TX-1063', type: 'İptal', amount: 5.00, loss: 0.00, efficiency: 95, price: 1976.00, soc: 7.8, date: '23.07.2026 10:59:38' },
-  { id: 'TX-1062', type: 'Şarj', amount: 5.00, loss: 0.25, efficiency: 95, price: 1976.00, soc: 7.8, date: '23.07.2026 10:59:36' },
+  // Ekledim: Tüm statik verilere 'operator' anahtarını ekleyerek işlemi yapan kişileri tanımladım.
+  { id: 'TX-1065', type: 'Deşarj', amount: 3.00, loss: 0.15, efficiency: 95, price: 1938.00, soc: 4.8, operator: 'Ahmet Yılmaz', date: '23.07.2026 10:59:44' },
+  { id: 'TX-1064', type: 'İptal', amount: 3.00, loss: 0.00, efficiency: 95, price: 1938.00, soc: 7.8, operator: 'Ayşe Demir', date: '23.07.2026 10:59:42' },
+  { id: 'TX-1063', type: 'İptal', amount: 5.00, loss: 0.00, efficiency: 95, price: 1976.00, soc: 7.8, operator: 'Ahmet Yılmaz', date: '23.07.2026 10:59:38' },
+  { id: 'TX-1062', type: 'Şarj', amount: 5.00, loss: 0.25, efficiency: 95, price: 1976.00, soc: 7.8, operator: 'Ayşe Demir', date: '23.07.2026 10:59:36' },
   // Filtreleri test etmek için eklenmiş geçmiş veriler
-  { id: 'TX-1061', type: 'Şarj', amount: 10.00, loss: 0.50, efficiency: 95, price: 1250.50, soc: 2.8, date: '22.07.2026 14:30:00' },
-  { id: 'TX-1060', type: 'Deşarj', amount: 8.00, loss: 0.40, efficiency: 95, price: 4500.00, soc: 12.8, date: '21.07.2026 19:15:22' },
+  { id: 'TX-1061', type: 'Şarj', amount: 10.00, loss: 0.50, efficiency: 95, price: 1250.50, soc: 2.8, operator: 'Ahmet Yılmaz', date: '22.07.2026 14:30:00' },
+  { id: 'TX-1060', type: 'Deşarj', amount: 8.00, loss: 0.40, efficiency: 95, price: 4500.00, soc: 12.8, operator: 'Ayşe Demir', date: '21.07.2026 19:15:22' },
 ];
 
 export default function History() {
@@ -18,27 +19,28 @@ export default function History() {
   const [filterType, setFilterType] = useState("Tümü");
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
-  const [showFilters, setShowFilters] = useState(false); // Gelişmiş filtreleri aç/kapat
+  const [filterOperator, setFilterOperator] = useState("Tümü"); // Ekledim: İşlemi yapan kişiye göre filtreleme yapabilmek için yeni bir state tanımladım.
+  const [showFilters, setShowFilters] = useState(false); // filtreler icin
 
   // --- DİNAMİK FİLTRELEME MANTIĞI ---
   const filteredTransactions = useMemo(() => {
     return mockTransactions.filter((tx) => {
-      // 1. Kelime Araması (ID veya Tarih içinde arama)
+      // 1. Kelime Araması
       const matchesSearch = tx.id.toLowerCase().includes(searchTerm.toLowerCase()) || 
                             tx.date.includes(searchTerm);
-      
-      // 2. İşlem Tipi Filtresi
+      // 2. İşlem Tipi 
       const matchesType = filterType === "Tümü" || tx.type === filterType;
-      
-      // 3. Minimum Fiyat Filtresi
+      // 3. Minimum Fiyat 
       const matchesMinPrice = minPrice === "" || tx.price >= parseFloat(minPrice);
-      
-      // 4. Maksimum Fiyat Filtresi
+      // 4. Maksimum Fiyat 
       const matchesMaxPrice = maxPrice === "" || tx.price <= parseFloat(maxPrice);
+      // Ekledim: 5. İşlemi Yapan Kişi filtresi 
+      const matchesOperator = filterOperator === "Tümü" || tx.operator === filterOperator;
 
-      return matchesSearch && matchesType && matchesMinPrice && matchesMaxPrice;
+      // Ekledim: Return kısmına matchesOperator mantığını da dahil ettim.
+      return matchesSearch && matchesType && matchesMinPrice && matchesMaxPrice && matchesOperator;
     });
-  }, [searchTerm, filterType, minPrice, maxPrice]);
+  }, [searchTerm, filterType, minPrice, maxPrice, filterOperator]); // Ekledim: Dependency dizisine yeni filterOperator state'imi ekledim.
 
   // Tablodaki Rozetlerin (Badge) Stillerini Belirleyen Fonksiyon
   const getBadgeStyle = (type) => {
@@ -66,7 +68,7 @@ export default function History() {
   return (
     <div className="space-y-6 animate-fade-in pb-10">
       
-      {/* BAŞLIK BÖLÜMÜ */}
+      {/* BASLIK*/}
       <div>
         <h1 className="text-2xl font-bold text-gray-900">İşlem Geçmişi</h1>
         <p className="text-sm text-gray-500 mt-1">Tüm manuel ve otomatik işlemlerin geçmişi.</p>
@@ -75,11 +77,10 @@ export default function History() {
       {/* ANA TABLO KARTI */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         
-        {/* Üst Kısım: Arama ve Filtreler */}
         <div className="p-5 border-b border-gray-100 space-y-4 bg-gray-50/50">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             
-            {/* Sol: Arama Çubuğu ve Gelişmiş Filtre Butonu */}
+            {/* Arama cubugu*/}
             <div className="flex items-center gap-3 w-full sm:w-auto">
               <div className="relative w-full sm:w-80">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -103,15 +104,16 @@ export default function History() {
               </button>
             </div>
 
-            {/* Sağ: Kayıt Sayısı Özeti */}
+            {/* Kayıt Sayisi */}
             <div className="text-xs font-semibold text-gray-500 w-full sm:w-auto text-right">
               Toplam {mockTransactions.length} kayıttan <span className="text-gray-900 font-bold">{filteredTransactions.length}</span> tanesi gösteriliyor.
             </div>
           </div>
 
-          {/* Gelişmiş Filtreler (Açılır Kapanır Alan) */}
+          {/* Filtrelerimiz */}
           {showFilters && (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 mt-4 border-t border-gray-200 animate-fade-in">
+            // Ekledim: Grid yapısını 3 sütundan 4 sütuna çıkardım ki yeni filtrem yan yana düzgün dursun. (md:grid-cols-4 yaptım)
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 pt-4 mt-4 border-t border-gray-200 animate-fade-in">
               <div>
                 <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">İşlem Tipi</label>
                 <select 
@@ -123,6 +125,20 @@ export default function History() {
                   <option value="Şarj">Şarj Edilenler</option>
                   <option value="Deşarj">Deşarj Edilenler</option>
                   <option value="İptal">İptal Edilenler</option>
+                </select>
+              </div>
+
+              {/* Ekledim: İşlemi Yapan kişi için filtre seçeneğini kutular arasına yerleştirdim. */}
+              <div>
+                <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">İşlemi Yapan</label>
+                <select 
+                  value={filterOperator}
+                  onChange={(e) => setFilterOperator(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-[#00E500] bg-white"
+                >
+                  <option value="Tümü">Tümü</option>
+                  <option value="Ahmet Yılmaz">Ahmet Yılmaz</option>
+                  <option value="Ayşe Demir">Ayşe Demir</option>
                 </select>
               </div>
 
@@ -151,7 +167,7 @@ export default function History() {
           )}
         </div>
 
-        {/* VERİ TABLOSU */}
+        {/* degiskenler(tablo) */}
         <div className="overflow-x-auto w-full">
           <table className="w-full text-left text-sm text-gray-600">
             <thead className="bg-gray-50/50 text-[11px] uppercase tracking-wider text-gray-400 font-bold border-b border-gray-100">
@@ -163,6 +179,8 @@ export default function History() {
                 <th className="px-6 py-4 text-center whitespace-nowrap">Verimlilik</th>
                 <th className="px-6 py-4 text-right whitespace-nowrap">Piyasa Fiyatı</th>
                 <th className="px-6 py-4 text-center whitespace-nowrap">SOC Değeri</th>
+                {/* Ekledim: Sayfa yapısını bozmamak için İşlemi Yapan başlığını Tarih'in hemen öncesine en sağa doğru koydum. */}
+                <th className="px-6 py-4 text-left whitespace-nowrap">İşlemi Yapan</th>
                 <th className="px-6 py-4 text-right whitespace-nowrap">Tarih / Saat</th>
               </tr>
             </thead>
@@ -196,6 +214,15 @@ export default function History() {
                       <td className="px-6 py-4 font-semibold text-gray-600 text-center whitespace-nowrap">
                         %{tx.soc.toFixed(1)}
                       </td>
+                      {/* Ekledim: Operatör bilgisini mini bir User ikonuyla birlikte temiz bir şekilde hücreye yerleştirdim. */}
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <div className="w-5 h-5 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-500">
+                            <User size={10} />
+                          </div>
+                          <span className="font-medium text-gray-700">{tx.operator}</span>
+                        </div>
+                      </td>
                       <td className="px-6 py-4 text-gray-500 text-right text-xs whitespace-nowrap">
                         {tx.date}
                       </td>
@@ -204,7 +231,8 @@ export default function History() {
                 })
               ) : (
                 <tr>
-                  <td colSpan="8" className="px-6 py-12 text-center text-gray-400">
+                  {/* Ekledim: Yeni bir sütun eklediğimiz için alttaki hata mesajının tabloyu tam kaplaması adına colSpan'i 8'den 9'a çıkardım. */}
+                  <td colSpan="9" className="px-6 py-12 text-center text-gray-400">
                     Belirtilen filtrelere uygun işlem bulunamadı.
                   </td>
                 </tr>

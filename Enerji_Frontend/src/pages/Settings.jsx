@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Settings as SettingsIcon, Battery, ShieldAlert, Save, Check } from 'lucide-react';
+import { useState, useEffect } from 'react'; //Sayfa yüklendiğinde kullanıcının rolünü okuyabilmek için useEffect'i dahil ettim.
+import { Settings as SettingsIcon, Battery, ShieldAlert, Save, Check, Lock } from 'lucide-react'; // Ekledim: Yetkisiz kullanıcılara göstereceğim uyarı mesajı ve buton için Lock (Kilit) ikonunu dahil ettim.
 
 export default function Settings() {
   // --- STATİK AYAR DURUMLARI ---
@@ -10,8 +10,27 @@ export default function Settings() {
   
   const [isSaved, setIsSaved] = useState(false);
 
+  //Kullanıcının rolünü tutacağım state'i tanımladım (varsayılanı 'operator' yaptım).
+  const [userRole, setUserRole] = useState('operator');
+
+  //Sayfa yüklendiğinde hafızadaki kullanıcı verisini çekip rolünü state'e atıyorum.
+  useEffect(() => {
+    const storedUser = localStorage.getItem('edys_user');
+    if (storedUser) {
+      const parsedUser = JSON.parse(storedUser);
+      setUserRole(parsedUser.role);
+    }
+  }, []);
+
+  
+  const isAdmin = userRole === 'admin';
+
   const handleSave = (e) => {
     e.preventDefault();
+    
+    //Eğer kullanıcı admin değilse, HTML üzerinden disabled silinip butona basılsa bile kaydetme fonksiyonunun çalışmasını engelliyorum.
+    if (!isAdmin) return;
+
     setIsSaved(true);
     // 2.5 saniye sonra "Kaydedildi" yazısını geri al
     setTimeout(() => setIsSaved(false), 2500);
@@ -32,10 +51,23 @@ export default function Settings() {
           </p>
         </div>
 
+        {/* Kullanıcı admin değilse sayfanın üstünde uyarı banner'ı gösteriyorum. */}
+        {!isAdmin && (
+          <div className="mb-8 p-4 bg-orange-50 border border-orange-200 rounded-2xl flex items-start gap-3 text-orange-800">
+            <div className="mt-0.5"><Lock size={18} /></div>
+            <div>
+              <h3 className="text-sm font-bold">Yetki Kısıtlaması</h3>
+              <p className="text-xs mt-1 text-orange-700/80">
+                Sistem ayarlarını değiştirme yetkiniz bulunmamaktadır. Değişiklik yapmak için Sistem Yöneticisi (Admin) hesabı ile giriş yapmalısınız. Form sadece okuma amaçlıdır.
+              </p>
+            </div>
+          </div>
+        )}
+
         <form onSubmit={handleSave} className="space-y-8">
           
           {/* 1. Kart kismi*/}
-          <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 transition-all hover:shadow-md">
+          <div className={`bg-white p-8 rounded-3xl shadow-sm border border-gray-100 transition-all ${!isAdmin ? 'opacity-75' : 'hover:shadow-md'}`}>
             <div className="flex items-center gap-3 text-gray-800 mb-8 border-b border-gray-100 pb-5">
               <Battery size={20} className="text-[#00E500]" />
               <h2 className="text-base font-bold uppercase tracking-wider">Depolama Kapasitesi ve Verim</h2>
@@ -51,7 +83,8 @@ export default function Settings() {
                     type="number" 
                     value={maxCapacity}
                     onChange={(e) => setMaxCapacity(e.target.value)}
-                    className="w-full pl-4 pr-12 py-3.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#00E500]/20 focus:border-[#00E500] transition-all text-gray-900 font-semibold bg-gray-50"
+                    disabled={!isAdmin} 
+                    className={`w-full pl-4 pr-12 py-3.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#00E500]/20 focus:border-[#00E500] transition-all text-gray-900 font-semibold bg-gray-50 ${!isAdmin ? 'cursor-not-allowed bg-gray-100 text-gray-500' : ''}`}
                     min="10"
                   />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-gray-400">MWh</span>
@@ -67,7 +100,8 @@ export default function Settings() {
                     type="number" 
                     value={efficiency}
                     onChange={(e) => setEfficiency(e.target.value)}
-                    className="w-full pl-4 pr-12 py-3.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#00E500]/20 focus:border-[#00E500] transition-all text-gray-900 font-semibold bg-gray-50"
+                    disabled={!isAdmin} 
+                    className={`w-full pl-4 pr-12 py-3.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#00E500]/20 focus:border-[#00E500] transition-all text-gray-900 font-semibold bg-gray-50 ${!isAdmin ? 'cursor-not-allowed bg-gray-100 text-gray-500' : ''}`}
                     min="1"
                     max="100"
                   />
@@ -78,7 +112,7 @@ export default function Settings() {
           </div>
 
           {/*Sinirlar */}
-          <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 transition-all hover:shadow-md">
+          <div className={`bg-white p-8 rounded-3xl shadow-sm border border-gray-100 transition-all ${!isAdmin ? 'opacity-75' : 'hover:shadow-md'}`}>
             <div className="flex items-center gap-3 text-gray-800 mb-8 border-b border-gray-100 pb-5">
               <ShieldAlert size={20} className="text-[#00E500]" />
               <h2 className="text-base font-bold uppercase tracking-wider">Güvenli Çalışma Aralıkları (SOC)</h2>
@@ -94,7 +128,8 @@ export default function Settings() {
                     type="number" 
                     value={minSoc}
                     onChange={(e) => setMinSoc(e.target.value)}
-                    className="w-full pl-4 pr-12 py-3.5 rounded-xl border border-red-200 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all text-gray-900 font-semibold bg-red-50/50"
+                    disabled={!isAdmin} 
+                    className={`w-full pl-4 pr-12 py-3.5 rounded-xl border border-red-200 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all text-gray-900 font-semibold bg-red-50/50 ${!isAdmin ? 'cursor-not-allowed opacity-60' : ''}`}
                     min="0"
                     max="50"
                   />
@@ -112,7 +147,8 @@ export default function Settings() {
                     type="number" 
                     value={maxSoc}
                     onChange={(e) => setMaxSoc(e.target.value)}
-                    className="w-full pl-4 pr-12 py-3.5 rounded-xl border border-[#00E500]/30 focus:outline-none focus:ring-2 focus:ring-[#00E500]/20 focus:border-[#00E500] transition-all text-gray-900 font-semibold bg-green-50/50"
+                    disabled={!isAdmin} 
+                    className={`w-full pl-4 pr-12 py-3.5 rounded-xl border border-[#00E500]/30 focus:outline-none focus:ring-2 focus:ring-[#00E500]/20 focus:border-[#00E500] transition-all text-gray-900 font-semibold bg-green-50/50 ${!isAdmin ? 'cursor-not-allowed opacity-60' : ''}`}
                     min="50"
                     max="100"
                   />
@@ -127,14 +163,21 @@ export default function Settings() {
           <div className="flex justify-center pt-6">
             <button 
               type="submit"
-              disabled={isSaved}
+              disabled={isSaved || !isAdmin} //Butonun tıklanabilirliğini admin kontrolüne de bağladım.
               className={`flex items-center justify-center gap-2 px-12 py-4 rounded-2xl font-bold text-sm transition-all shadow-sm ${
-                isSaved 
-                  ? 'bg-gray-100 text-green-600 border border-green-200 cursor-not-allowed' 
-                  : 'bg-[#00E500] hover:bg-[#00c200] text-white hover:shadow-lg hover:-translate-y-0.5'
+                !isAdmin
+                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed' // Ekledim: Admin değilse tamamen gri bir buton görünümü verdim.
+                  : isSaved 
+                    ? 'bg-gray-100 text-green-600 border border-green-200 cursor-not-allowed' 
+                    : 'bg-[#00E500] hover:bg-[#00c200] text-white hover:shadow-lg hover:-translate-y-0.5'
               }`}
             >
-              {isSaved ? (
+              {!isAdmin ? (
+                <>
+                  <Lock size={18} strokeWidth={2.5} />
+                  Yetkiniz Yok
+                </>
+              ) : isSaved ? (
                 <>
                   <Check size={18} strokeWidth={2.5} />
                   Değişiklikler Başarıyla Kaydedildi
