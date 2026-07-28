@@ -1,29 +1,37 @@
-import { useState } from 'react'; // Ekledim: E-posta, şifre ve hata durumlarını tutmak için useState'i dahil ettim.
+import { useState } from 'react'; // E-posta, şifre ve hata durumlarını tutmak için useState'i dahil ettim.
 import { useNavigate } from 'react-router-dom';
 import { Zap } from 'lucide-react';
 
 export default function Login() {
   const navigate = useNavigate();
 
-  //  Kullanıcının girdiği bilgileri ve olası hata mesajını tutacağım stateler
+  // Kullanıcının girdiği bilgileri ve olası hata mesajını tutacağım stateleri tanımladım.
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
   const handleLogin = async (e) => { // Fetch ile veri çekeceğim için fonksiyonu async yaptım.
-    e.preventDefault(); // sayfanın yenilenmesini engeller
+    e.preventDefault(); // Sayfanın yenilenmesini engelliyorum.
     setError(''); 
 
     try {
-      // users.json dosyasından kayıtlı kullanıcı listesini okuyorum.
-      const response = await fetch('/data/users.json');
-      const users = await response.json();
+      // Artık yerel bir json dosyasını değil, ayağa kaldırdığımız .NET API'sini çağırıyorum.
+      // POST metodu ile kullanıcı adı ve şifreyi güvenli bir şekilde Backend'e yolluyorum.
+      const response = await fetch('http://localhost:5252/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        // Kullanıcının inputlara girdiği verileri JSON string'ine çevirip API'ye gönderiyorum.
+        body: JSON.stringify({ email, password }) 
+      });
 
-      //Benim state'teki girdiğim email ve şifre ile JSON'daki veriler eşleşiyor mu diye arıyorum.
-      const foundUser = users.find(u => u.email === email && u.password === password);
+      // Eğer API'den gelen cevap olumlu ise
+      if (response.ok) {
+        // Backend'in bana yolladığı kullanıcı bilgilerini alıyorum.
+        const foundUser = await response.json();
 
-      if (foundUser) {
-        //Eğer eşleşme bulduysam, şifreyi hariç tutarak kullanıcının diğer bilgilerini tarayıcının hafızasına (localStorage) kaydediyorum.
+        // Bu bilgileri uygulamanın diğer sayfalarında kullanabilmek için tarayıcının hafızasına (localStorage) kaydediyorum.
         const userData = {
           name: foundUser.name,
           role: foundUser.role,
@@ -32,13 +40,15 @@ export default function Login() {
         };
         localStorage.setItem('edys_user', JSON.stringify(userData));
         
-        navigate('/dashboard'); // dashboard yonlendirmesi
+        navigate('/dashboard'); // Dashboard yönlendirmesi 
       } else {
-        // Eğer uyuşmazlık varsa hata state'i
-        setError('E-posta veya şifre hatalı. Lütfen tekrar deneyin.');
+        // Eğer cevap olumsuzsa Backend'den gelen hata mesajını yakalayıp ekrana basıyorum.
+        const errorData = await response.json();
+        setError(errorData.message || 'E-posta veya şifre hatalı. Lütfen tekrar deneyin.');
       }
     } catch (err) {
-      setError('Sisteme bağlanırken bir hata oluştu.');
+      // API'ye hiç ulaşılamıyorsa bu hata gösterilir
+      setError('Sisteme (Backend) bağlanırken bir hata oluştu. Sunucunun açık olduğundan emin olun.');
     }
   };
 
@@ -55,7 +65,7 @@ export default function Login() {
           <p className="text-sm text-gray-400 mt-1">Enerji Depolama Yönetim Sistemi paneline giriş yapın</p>
         </div>
 
-        {/* Eğer error state'im boş değilse (hata varsa), formun hemen üstünde kırmızı bir kutu içinde gösteriyorum. */}
+        {/* Eğer error state'im boş değilse, formun hemen üstünde kırmızı bir kutu içinde gösteriyorum. */}
         {error && (
           <div className="mb-5 p-3 bg-red-50 border border-red-100 rounded-lg text-red-600 text-sm text-center">
             {error}

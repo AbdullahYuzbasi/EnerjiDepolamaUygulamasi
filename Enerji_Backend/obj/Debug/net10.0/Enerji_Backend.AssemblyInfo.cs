@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Enerji_Backend")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+df83b55ed6b1faa1b6cd9771d8e0a2708d5cf7ef")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+393f2794e7a532457d42971fa9e49d6269cc6d21")]
 [assembly: System.Reflection.AssemblyProductAttribute("Enerji_Backend")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Enerji_Backend")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

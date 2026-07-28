@@ -1,9 +1,8 @@
 import { useState, useMemo } from 'react';
-import { Search, ArrowDown, ArrowUp, X, Filter, User } from 'lucide-react'; // Ekledim: Operatör isminin yanına koymak için User ikonunu dahil ettim.
+import { Search, ArrowDown, ArrowUp, X, Filter, User } from 'lucide-react';  
 
 // --- STATİK (MOCK) VERİLER ---
 const mockTransactions = [
-  // Ekledim: Tüm statik verilere 'operator' anahtarını ekleyerek işlemi yapan kişileri tanımladım.
   { id: 'TX-1065', type: 'Deşarj', amount: 3.00, loss: 0.15, efficiency: 95, price: 1938.00, soc: 4.8, operator: 'Ahmet Yılmaz', date: '23.07.2026 10:59:44' },
   { id: 'TX-1064', type: 'İptal', amount: 3.00, loss: 0.00, efficiency: 95, price: 1938.00, soc: 7.8, operator: 'Ayşe Demir', date: '23.07.2026 10:59:42' },
   { id: 'TX-1063', type: 'İptal', amount: 5.00, loss: 0.00, efficiency: 95, price: 1976.00, soc: 7.8, operator: 'Ahmet Yılmaz', date: '23.07.2026 10:59:38' },
@@ -19,7 +18,7 @@ export default function History() {
   const [filterType, setFilterType] = useState("Tümü");
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
-  const [filterOperator, setFilterOperator] = useState("Tümü"); // Ekledim: İşlemi yapan kişiye göre filtreleme yapabilmek için yeni bir state tanımladım.
+  const [filterOperator, setFilterOperator] = useState("Tümü"); 
   const [showFilters, setShowFilters] = useState(false); // filtreler icin
 
   // --- DİNAMİK FİLTRELEME MANTIĞI ---
@@ -34,13 +33,12 @@ export default function History() {
       const matchesMinPrice = minPrice === "" || tx.price >= parseFloat(minPrice);
       // 4. Maksimum Fiyat 
       const matchesMaxPrice = maxPrice === "" || tx.price <= parseFloat(maxPrice);
-      // Ekledim: 5. İşlemi Yapan Kişi filtresi 
+      //5. İşlemi Yapan Kişi filtresi 
       const matchesOperator = filterOperator === "Tümü" || tx.operator === filterOperator;
 
-      // Ekledim: Return kısmına matchesOperator mantığını da dahil ettim.
       return matchesSearch && matchesType && matchesMinPrice && matchesMaxPrice && matchesOperator;
     });
-  }, [searchTerm, filterType, minPrice, maxPrice, filterOperator]); // Ekledim: Dependency dizisine yeni filterOperator state'imi ekledim.
+  }, [searchTerm, filterType, minPrice, maxPrice, filterOperator]); // Dependency dizisine yeni filterOperator state'imi ekledim.
 
   // Tablodaki Rozetlerin (Badge) Stillerini Belirleyen Fonksiyon
   const getBadgeStyle = (type) => {
@@ -112,7 +110,7 @@ export default function History() {
 
           {/* Filtrelerimiz */}
           {showFilters && (
-            // Ekledim: Grid yapısını 3 sütundan 4 sütuna çıkardım ki yeni filtrem yan yana düzgün dursun. (md:grid-cols-4 yaptım)
+            // Grid yapısını 3 sütundan 4 sütuna çıkardım ki yeni filtrem yan yana düzgün dursun. (md:grid-cols-4 yaptım)
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 pt-4 mt-4 border-t border-gray-200 animate-fade-in">
               <div>
                 <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">İşlem Tipi</label>
@@ -128,7 +126,7 @@ export default function History() {
                 </select>
               </div>
 
-              {/* Ekledim: İşlemi Yapan kişi için filtre seçeneğini kutular arasına yerleştirdim. */}
+              {/*İşlemi Yapan kişi için filtre seçeneğini kutular arasına yerleştirdim. */}
               <div>
                 <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">İşlemi Yapan</label>
                 <select 
@@ -179,7 +177,6 @@ export default function History() {
                 <th className="px-6 py-4 text-center whitespace-nowrap">Verimlilik</th>
                 <th className="px-6 py-4 text-right whitespace-nowrap">Piyasa Fiyatı</th>
                 <th className="px-6 py-4 text-center whitespace-nowrap">SOC Değeri</th>
-                {/* Ekledim: Sayfa yapısını bozmamak için İşlemi Yapan başlığını Tarih'in hemen öncesine en sağa doğru koydum. */}
                 <th className="px-6 py-4 text-left whitespace-nowrap">İşlemi Yapan</th>
                 <th className="px-6 py-4 text-right whitespace-nowrap">Tarih / Saat</th>
               </tr>
@@ -214,7 +211,7 @@ export default function History() {
                       <td className="px-6 py-4 font-semibold text-gray-600 text-center whitespace-nowrap">
                         %{tx.soc.toFixed(1)}
                       </td>
-                      {/* Ekledim: Operatör bilgisini mini bir User ikonuyla birlikte temiz bir şekilde hücreye yerleştirdim. */}
+                      {/*Operatör bilgisini mini bir User ikonuyla  yerleştirdim. */}
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-2">
                           <div className="w-5 h-5 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-500">
@@ -231,7 +228,6 @@ export default function History() {
                 })
               ) : (
                 <tr>
-                  {/* Ekledim: Yeni bir sütun eklediğimiz için alttaki hata mesajının tabloyu tam kaplaması adına colSpan'i 8'den 9'a çıkardım. */}
                   <td colSpan="9" className="px-6 py-12 text-center text-gray-400">
                     Belirtilen filtrelere uygun işlem bulunamadı.
                   </td>

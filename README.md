@@ -1,35 +1,46 @@
 # EDYS Panel (Enerji Depolama Yönetim Sistemi)
-Bu proje, SOC değerini izlemek, yönetmek ve enerji piyasası verilerine dayalı arbitraj (alım-satım) kararları vermek amacıyla geliştirilmiş basit bir web uygulamasıdır.
+Bu proje, SOC (State of Charge) değerini izlemek, yönetmek ve enerji piyasası verilerine dayalı arbitraj (alım-satım) kararları vermek amacıyla geliştirilmiş bir web uygulamasıdır. Proje, "Separation of Concerns" (Sorumlulukların Ayrılığı) prensibiyle React tabanlı bir Frontend ve .NET tabanlı bir Backend mimarisinden oluşmaktadır.
 
 ## 🚀 Proje Kapsamı ve Özellikler
 
-- **Dashboard:** Anlık SOC (State of Charge) durumu, mevcut kapasite, döngü verimliliği ve anlık piyasa fiyatlarının görselleştirilmesi.
+- **Dashboard:** Anlık SOC durumu, mevcut kapasite, döngü verimliliği ve anlık piyasa fiyatlarının görselleştirilmesi.
 - **İşlem ve Kontrol:** Sisteme manuel olarak şarj (alım) ve deşarj (satım) komutları gönderme. Yapay zeka tabanlı "Al/Sat/Bekle" karar destek simülasyonu.
-- **İşlem Geçmişi (Audit Trail):** Yapılan tüm işlemlerin detaylı (Fiyat, MWh, Verim Kaybı) ve "İşlemi Yapan" (Operatör/Admin) bazlı olarak listelenmesi. Gelişmiş veri tablosu filtreleme mimarisi.
-- **Sistem Ayarları & RBAC:** Minimum/Maksimum güvenli çalışma aralıklarının ve sistem verimliliğinin tanımlanması. Rol bazlı erişim kontrolü ile (Role-Based Access Control) sadece "Admin" yetkisine sahip kullanıcıların ayarları değiştirebilmesi.
+- **İşlem Geçmişi (Audit Trail):** Yapılan tüm işlemlerin detaylı (Fiyat, MWh, Verim Kaybı) ve "İşlemi Yapan" bazlı olarak listelenmesi.
+- **Sistem Ayarları & RBAC:** Minimum/Maksimum güvenli çalışma aralıklarının ve sistem verimliliğinin tanımlanması. Rol bazlı erişim kontrolü ile sadece "Admin" yetkisine sahip kullanıcıların ayarları değiştirebilmesi.
+- **Dinamik Veri Yönetimi:** Arka planda çalışan Singleton tabanlı .NET servisi sayesinde verilerin RAM üzerinde güvenle tutulması ve iş kurallarının (limit ve verim kontrolleri) otonom olarak API seviyesinde denetlenmesi.
 
-## 🛠 Kullanılan Teknolojiler (Frontend)
+## 🛠 Kullanılan Teknolojiler
 
-- **React.js** 
-- **Tailwind CSS** 
-- **React Router DOM** (Sayfalar arası yönlendirme)
+**Frontend:**
+- React.js & React Router DOM
+- Tailwind CSS & Lucide React (İkonlar)
 
-## 👤 Test Hesapları (Geliştirme Aşaması)
+**Backend:**
+- .NET 8 (C#)
+- ASP.NET Core Web API (Controllers & Singleton Services)
+- Swagger / OpenAPI (API Dokümantasyonu)
 
-Sistemin yetkilendirme kısmını test etmek için aşağıdaki statik hesaplar kullanılabilir:
+## ⚙️ Kurulum ve Çalıştırma
+
+Proje iki ayrı katmandan (Backend ve Frontend) oluştuğu için tam entegrasyonlu çalışması adına sırasıyla iki sunucunun da ayağa kaldırılması gerekmektedir.
+
+### 1. Adım: Backend'i Başlatmak
+1. Yeni bir terminal açın ve Backend klasörüne gidin: `cd Enerji_Backend`
+2. Eksik paketleri yükleyin: `dotnet restore`
+3. Sunucuyu ayağa kaldırın: `dotnet run`
+*(Sunucu varsayılan olarak `http://localhost:5252` veya benzeri bir portta çalışmaya başlayacaktır. Terminali kapatmayın.)*
+
+### 2. Adım: Frontend'i Başlatmak
+1. Yeni bir terminal sekmesi açın ve Frontend klasörüne gidin: `cd Enerji_Frontend`
+2. Gerekli kütüphaneleri yükleyin: `npm install`
+3. React uygulamasını başlatın: `npm run dev`
+*(Uygulama tarayıcınızda açılacaktır.)*
+
+## 👤 Test Hesapları
+
+Sistemin .NET API üzerinden çalışan yetkilendirme (Login) kısmını test etmek için aşağıdaki hesaplar kullanılabilir:
 
 - **Sistem Yöneticisi (Admin):** `admin@edys.com` / `123` (Tam yetkili)
 - **Tesis Operatörü (Operator):** `operator@edys.com` / `123` (Sadece okuma yetkisi)
 
-## ⚙️ Kurulum ve Çalıştırma
-
-Projeyi yerel ortamınızda çalıştırmak için:
-
-1. Repoyu klonlayın ya da indirin.
-2. Klasöre gidin (yeni terminal açıp içine yazın): `cd Enerji_Frontend`
-3. Bağımlılıkları yükleyin: `npm install`
-4. Projeyi başlatın (yeni bir sekmede ya da IDE içinde açılır): `npm run dev`
-
----
-
-*Not: Bu proje, Frontend ve Backend olarak iki kısımdan oluşacak şekilde tasarlanmıştır. v2.3 sürümüne kadar olan kısım, mimarinin React tabanlı Frontend kısmının temsil etmektedir.*
+*Not: Bu sürüm, önceki sürümlerde yapılan Frontend mimarisi üzerine Backend mimarisinin başladığı, klasör yapısının oluşturulduğu, ekstra olarak login ekranında kontrol yapılması ve devamında çalıştığının denenmesi ile ilgili bir sürümdür.*

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'; //Sayfa yüklendiğinde kullanıcının rolünü okuyabilmek için useEffect'i dahil ettim.
-import { Settings as SettingsIcon, Battery, ShieldAlert, Save, Check, Lock } from 'lucide-react'; // Ekledim: Yetkisiz kullanıcılara göstereceğim uyarı mesajı ve buton için Lock (Kilit) ikonunu dahil ettim.
+import { Settings as SettingsIcon, Battery, ShieldAlert, Save, Check, Lock } from 'lucide-react'; //Yetkisiz kullanıcılara göstereceğim uyarı mesajı ve buton için Lock (Kilit) ikonunu dahil ettim.
 
 export default function Settings() {
   // --- STATİK AYAR DURUMLARI ---
@@ -166,7 +166,7 @@ export default function Settings() {
               disabled={isSaved || !isAdmin} //Butonun tıklanabilirliğini admin kontrolüne de bağladım.
               className={`flex items-center justify-center gap-2 px-12 py-4 rounded-2xl font-bold text-sm transition-all shadow-sm ${
                 !isAdmin
-                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed' // Ekledim: Admin değilse tamamen gri bir buton görünümü verdim.
+                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
                   : isSaved 
                     ? 'bg-gray-100 text-green-600 border border-green-200 cursor-not-allowed' 
                     : 'bg-[#00E500] hover:bg-[#00c200] text-white hover:shadow-lg hover:-translate-y-0.5'
