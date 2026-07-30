@@ -71,5 +71,23 @@ namespace Enerji_Backend.Controllers
             // Sınır aşımı varsa işlemi reddedip hata mesajını React'e döndüm.
             return BadRequest(new { message = result });
         }
+
+        // Ekledim: Frontend'den gelen vazgeçilen/iptal edilen işlem verilerini karşılamak için DTO
+        public class CancelRequest
+        {
+            public string Type { get; set; } = string.Empty;
+            public double Amount { get; set; }
+            public double Price { get; set; }
+            public string Operator { get; set; } = string.Empty;
+            public string CancelReason { get; set; } = string.Empty;
+        }
+
+        // Ekledim: İptal edilen işlemleri karşılayıp RAM'e loglayan yepyeni bir API kapısı
+        [HttpPost("cancel")]
+        public IActionResult CancelTransaction([FromBody] CancelRequest request)
+        {
+            _storageService.LogCancelledTransaction(request.Type, request.Amount, request.Price, request.Operator, request.CancelReason);
+            return Ok(new { message = "İptal işlemi başarıyla kayıt altına alındı." });
+        }
     }
 }

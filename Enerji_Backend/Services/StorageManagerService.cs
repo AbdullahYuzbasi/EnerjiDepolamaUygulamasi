@@ -19,12 +19,30 @@ namespace Enerji_Backend.Services
             _settings = new SystemSettings();
             _transactions = new List<Transaction>();
             
+            //Sistem başladığında grafiğin ve mevcut durumun dolu gözükmesi için SOC'yi %80 olarak ayarladım.
+            _state.CurrentSoc = 80.0;
+            _state.CurrentCapacity = 80.0; // 100 MWh kapasite varsayımıyla
+
             // Arayüz boş kalmasın diye test amaçlı sahte bir geçmiş işlemi ekledim.
             _transactions.Add(new Transaction 
             { 
-                Id = "TX-1000", Type = "Şarj", Amount = 10, Loss = 0.5, 
-                Efficiency = 95, Price = 2500, Soc = 48.0, 
-                Operator = "Ahmet Yılmaz", Date = DateTime.Now.ToString("dd.MM.yyyy HH:mm:ss") 
+                Id = "TX-1001", Type = "Şarj", Amount = 20, Loss = 1.0, 
+                Efficiency = 95, Price = 1450.50, Soc = 60.0, 
+                Operator = "Ahmet Yılmaz", Date = DateTime.Now.AddHours(-4).ToString("dd.MM.yyyy HH:mm:ss") 
+            });
+            
+            _transactions.Add(new Transaction 
+            { 
+                Id = "TX-1002", Type = "Deşarj", Amount = 10, Loss = 0.0, 
+                Efficiency = 95, Price = 2100.00, Soc = 50.0, 
+                Operator = "Ayşe Demir", Date = DateTime.Now.AddHours(-2).ToString("dd.MM.yyyy HH:mm:ss") 
+            });
+            
+            _transactions.Add(new Transaction 
+            { 
+                Id = "TX-1003", Type = "Şarj", Amount = 31.5, Loss = 1.5, 
+                Efficiency = 95, Price = 1250.00, Soc = 80.0, 
+                Operator = "Sistem (Oto)", Date = DateTime.Now.AddMinutes(-30).ToString("dd.MM.yyyy HH:mm:ss") 
             });
         }
 
@@ -97,13 +115,36 @@ namespace Enerji_Backend.Services
                 Price = price,
                 Soc = newSocPercentage,
                 Operator = operatorName,
-                Date = DateTime.Now.ToString("dd.MM.yyyy HH:mm:ss")
+                Date = DateTime.Now.ToString("dd.MM.yyyy HH:mm:ss"),
+                IsCancelled = false // Ekledim: Normal başarılı işlemlerde iptal bayrağı false olur.
             };
 
             // En yeni işlem en üstte görünsün diye listenin en başına (0 =s indeks) ekledim.
             _transactions.Insert(0, transaction);
 
             return "Success";
+        }
+
+        // Ekledim: İşlemden vazgeçilme niyetini (İptal) batarya değerlerini HİÇ değiştirmeden loglayan özel fonksiyon.
+        public void LogCancelledTransaction(string type, double amount, double price, string operatorName, string cancelReason)
+        {
+            var cancelledTransaction = new Transaction
+            {
+                Id = "TX-" + new Random().Next(1001, 9999),
+                Type = type,
+                Amount = amount,
+                Loss = 0, // İşlem gerçekleşmediği için kayıp yok
+                Efficiency = _settings.Efficiency,
+                Price = price,
+                Soc = _state.CurrentSoc, // Mevcut SOC değerine hiç dokunmadan logluyoruz
+                Operator = operatorName,
+                Date = DateTime.Now.ToString("dd.MM.yyyy HH:mm:ss"),
+                IsCancelled = true, // İptal edildi damgasını vurduk
+                CancelReason = cancelReason // İptal nedenini kaydettik
+            };
+
+            // Niyet edilen ancak iptal edilen işlemi de geçmiş tablosunun en üstüne ekledim.
+            _transactions.Insert(0, cancelledTransaction);
         }
     }
 }

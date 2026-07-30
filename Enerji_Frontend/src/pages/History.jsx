@@ -1,48 +1,84 @@
-import { useState, useMemo } from 'react';
-import { Search, ArrowDown, ArrowUp, X, Filter, User } from 'lucide-react';  
-
-// --- STATİK (MOCK) VERİLER ---
-const mockTransactions = [
-  { id: 'TX-1065', type: 'Deşarj', amount: 3.00, loss: 0.15, efficiency: 95, price: 1938.00, soc: 4.8, operator: 'Ahmet Yılmaz', date: '23.07.2026 10:59:44' },
-  { id: 'TX-1064', type: 'İptal', amount: 3.00, loss: 0.00, efficiency: 95, price: 1938.00, soc: 7.8, operator: 'Ayşe Demir', date: '23.07.2026 10:59:42' },
-  { id: 'TX-1063', type: 'İptal', amount: 5.00, loss: 0.00, efficiency: 95, price: 1976.00, soc: 7.8, operator: 'Ahmet Yılmaz', date: '23.07.2026 10:59:38' },
-  { id: 'TX-1062', type: 'Şarj', amount: 5.00, loss: 0.25, efficiency: 95, price: 1976.00, soc: 7.8, operator: 'Ayşe Demir', date: '23.07.2026 10:59:36' },
-  // Filtreleri test etmek için eklenmiş geçmiş veriler
-  { id: 'TX-1061', type: 'Şarj', amount: 10.00, loss: 0.50, efficiency: 95, price: 1250.50, soc: 2.8, operator: 'Ahmet Yılmaz', date: '22.07.2026 14:30:00' },
-  { id: 'TX-1060', type: 'Deşarj', amount: 8.00, loss: 0.40, efficiency: 95, price: 4500.00, soc: 12.8, operator: 'Ayşe Demir', date: '21.07.2026 19:15:22' },
-];
+import { useState, useMemo, useEffect } from 'react'; 
+// Ekledim: Bilgi balonu (Tooltip) için 'Info' ikonunu dahil ettim.
+import { Search, ArrowDown, ArrowUp, X, Filter, User, Info } from 'lucide-react';  
 
 export default function History() {
+  // Backend'den çekeceğim gerçek işlem geçmişi verilerini tutacağım state
+  const [transactions, setTransactions] = useState([]);
+
   // --- FİLTRE DURUMLARI (STATES) ---
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("Tümü");
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [filterOperator, setFilterOperator] = useState("Tümü"); 
-  const [showFilters, setShowFilters] = useState(false); // filtreler icin
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Sayfa yüklendiğinde backend'deki geçmiş işlemler listesini çekiyorum.
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        // Ekledim: Tarayıcı önbelleğini kırmak için Control.jsx'teki aynı sert kuralları buraya da ekledim.
+        const timestamp = new Date().getTime(); 
+        const noCacheHeaders = {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        };
+
+        const response = await fetch(`http://localhost:5252/api/storage/history?t=${timestamp}`, {
+          headers: noCacheHeaders,
+          cache: 'no-store'
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setTransactions(data); 
+        }
+      } catch (error) {
+        console.error("Geçmiş veriler backend'den çekilemedi:", error);
+      }
+    };
+    
+    fetchHistory();
+  }, []);
 
   // --- DİNAMİK FİLTRELEME MANTIĞI ---
   const filteredTransactions = useMemo(() => {
-    return mockTransactions.filter((tx) => {
+    return transactions.filter((tx) => {
       // 1. Kelime Araması
       const matchesSearch = tx.id.toLowerCase().includes(searchTerm.toLowerCase()) || 
                             tx.date.includes(searchTerm);
-      // 2. İşlem Tipi 
-      const matchesType = filterType === "Tümü" || tx.type === filterType;
+      
+      // Güncelledim: 2. İşlem Tipi (Artık backend'den gelen IsCancelled bayrağına göre akıllı filtreleme yapıyoruz)
+      const matchesType = (() => {
+        if (filterType === "Tümü") return true;
+        if (filterType === "İptal") return tx.isCancelled === true;
+        // Eğer Şarj veya Deşarj seçildiyse, sadece BAŞARILI (iptal edilmemiş) olanları göster
+        return tx.type === filterType && !tx.isCancelled;
+      })();
+
       // 3. Minimum Fiyat 
       const matchesMinPrice = minPrice === "" || tx.price >= parseFloat(minPrice);
       // 4. Maksimum Fiyat 
       const matchesMaxPrice = maxPrice === "" || tx.price <= parseFloat(maxPrice);
-      //5. İşlemi Yapan Kişi filtresi 
+      // 5. İşlemi Yapan Kişi filtresi 
       const matchesOperator = filterOperator === "Tümü" || tx.operator === filterOperator;
 
       return matchesSearch && matchesType && matchesMinPrice && matchesMaxPrice && matchesOperator;
     });
-  }, [searchTerm, filterType, minPrice, maxPrice, filterOperator]); // Dependency dizisine yeni filterOperator state'imi ekledim.
+  }, [searchTerm, filterType, minPrice, maxPrice, filterOperator, transactions]); 
 
-  // Tablodaki Rozetlerin (Badge) Stillerini Belirleyen Fonksiyon
-  const getBadgeStyle = (type) => {
-    switch (type) {
+  // Güncelledim: Tablodaki Rozetlerin Stillerini Belirleyen Fonksiyon (Artık tx objesinin tamamını alıp isCancelled durumuna bakıyor)
+  const getBadgeStyle = (tx) => {
+    if (tx.isCancelled) {
+      return { 
+        bg: 'bg-gray-100', text: 'text-gray-500', border: 'border-gray-200',
+        icon: <X size={14} className="mr-1.5" />, label: 'İptal Edildi'
+      };
+    }
+
+    switch (tx.type) {
       case 'Şarj':
         return { 
           bg: 'bg-green-100', text: 'text-green-700', border: 'border-green-200',
@@ -53,13 +89,8 @@ export default function History() {
           bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-200',
           icon: <ArrowUp size={14} className="mr-1.5" />, label: 'Deşarj'
         };
-      case 'İptal':
-        return { 
-          bg: 'bg-gray-100', text: 'text-gray-500', border: 'border-gray-200',
-          icon: <X size={14} className="mr-1.5" />, label: 'İptal Edildi'
-        };
       default:
-        return { bg: 'bg-gray-100', text: 'text-gray-500', border: 'border-gray-200', icon: null, label: type };
+        return { bg: 'bg-gray-100', text: 'text-gray-500', border: 'border-gray-200', icon: null, label: tx.type };
     }
   };
 
@@ -104,13 +135,12 @@ export default function History() {
 
             {/* Kayıt Sayisi */}
             <div className="text-xs font-semibold text-gray-500 w-full sm:w-auto text-right">
-              Toplam {mockTransactions.length} kayıttan <span className="text-gray-900 font-bold">{filteredTransactions.length}</span> tanesi gösteriliyor.
+              Toplam {transactions.length} kayıttan <span className="text-gray-900 font-bold">{filteredTransactions.length}</span> tanesi gösteriliyor.
             </div>
           </div>
 
           {/* Filtrelerimiz */}
           {showFilters && (
-            // Grid yapısını 3 sütundan 4 sütuna çıkardım ki yeni filtrem yan yana düzgün dursun. (md:grid-cols-4 yaptım)
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 pt-4 mt-4 border-t border-gray-200 animate-fade-in">
               <div>
                 <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">İşlem Tipi</label>
@@ -126,7 +156,6 @@ export default function History() {
                 </select>
               </div>
 
-              {/*İşlemi Yapan kişi için filtre seçeneğini kutular arasına yerleştirdim. */}
               <div>
                 <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">İşlemi Yapan</label>
                 <select 
@@ -165,7 +194,7 @@ export default function History() {
           )}
         </div>
 
-        {/* degiskenler(tablo) */}
+        {/* Tablo */}
         <div className="overflow-x-auto w-full">
           <table className="w-full text-left text-sm text-gray-600">
             <thead className="bg-gray-50/50 text-[11px] uppercase tracking-wider text-gray-400 font-bold border-b border-gray-100">
@@ -184,43 +213,69 @@ export default function History() {
             <tbody className="divide-y divide-gray-100 bg-white">
               {filteredTransactions.length > 0 ? (
                 filteredTransactions.map((tx, index) => {
-                  const badge = getBadgeStyle(tx.type);
+                  const badge = getBadgeStyle(tx);
+                  const isCancelled = tx.isCancelled; // Satırın soluk görünüp görünmeyeceğini belirleyen değişken
+
                   return (
-                    <tr key={index} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 font-semibold text-gray-800 whitespace-nowrap">
+                    <tr key={index} className={`transition-colors ${isCancelled ? 'bg-gray-50' : 'hover:bg-gray-50'}`}>
+                      
+                      <td className={`px-6 py-4 font-semibold whitespace-nowrap ${isCancelled ? 'text-gray-400' : 'text-gray-800'}`}>
                         {tx.id}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2.5 py-1 text-[11px] font-bold uppercase rounded-md border ${badge.bg} ${badge.text} ${badge.border}`}>
-                          {badge.icon}
-                          {badge.label}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 font-bold text-gray-900 text-center whitespace-nowrap">
-                        {tx.amount.toFixed(2)}
-                      </td>
-                      <td className="px-6 py-4 text-gray-500 text-center whitespace-nowrap">
-                        {tx.loss.toFixed(2)}
-                      </td>
-                      <td className="px-6 py-4 text-[#00E500] font-bold text-center whitespace-nowrap">
-                        %{tx.efficiency}
-                      </td>
-                      <td className="px-6 py-4 font-bold text-gray-900 text-right whitespace-nowrap">
-                        ₺{tx.price.toFixed(2)}
-                      </td>
-                      <td className="px-6 py-4 font-semibold text-gray-600 text-center whitespace-nowrap">
-                        %{tx.soc.toFixed(1)}
-                      </td>
-                      {/*Operatör bilgisini mini bir User ikonuyla  yerleştirdim. */}
+                      
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-2">
-                          <div className="w-5 h-5 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-500">
-                            <User size={10} />
-                          </div>
-                          <span className="font-medium text-gray-700">{tx.operator}</span>
+                          <span className={`inline-flex items-center px-2.5 py-1 text-[11px] font-bold uppercase rounded-md border ${badge.bg} ${badge.text} ${badge.border}`}>
+                            {badge.icon}
+                            {badge.label}
+                          </span>
+                          
+                          {isCancelled && tx.cancelReason && (
+                            <div className="relative group flex items-center">
+                              <Info size={16} className="text-gray-400 hover:text-gray-600 cursor-help transition-colors" />
+                              {/* GÜNCELLEME: Yönlendirici sınıfları (top-full, mt-2 ve border-b) alta açılacak şekilde değiştirdim */}
+                              <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 hidden group-hover:block min-w-[200px] max-w-[320px] p-3 bg-gray-800 text-white text-[11px] rounded-lg shadow-xl z-50 whitespace-normal break-words">
+                                <p className="font-bold text-gray-300 mb-1 border-b border-gray-600 pb-1">İptal Nedeni</p>
+                                <p className="leading-relaxed">{tx.cancelReason}</p>
+                                <div className="absolute left-1/2 -translate-x-1/2 bottom-full border-4 border-transparent border-b-gray-800"></div>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-gray-500 text-right text-xs whitespace-nowrap">
+                      
+                      <td className={`px-6 py-4 font-bold text-center whitespace-nowrap ${isCancelled ? 'text-gray-400' : 'text-gray-900'}`}>
+                        {tx.amount.toFixed(2)}
+                      </td>
+                      
+                      <td className="px-6 py-4 text-gray-400 text-center whitespace-nowrap">
+                        {tx.loss.toFixed(2)}
+                      </td>
+                      
+                      <td className={`px-6 py-4 font-bold text-center whitespace-nowrap ${isCancelled ? 'text-gray-400' : 'text-[#00E500]'}`}>
+                        %{tx.efficiency}
+                      </td>
+                      
+                      <td className={`px-6 py-4 font-bold text-right whitespace-nowrap ${isCancelled ? 'text-gray-400' : 'text-gray-900'}`}>
+                        ₺{tx.price.toFixed(2)}
+                      </td>
+                      
+                      <td className={`px-6 py-4 font-semibold text-center whitespace-nowrap ${isCancelled ? 'text-gray-400' : 'text-gray-600'}`}>
+                        %{tx.soc.toFixed(1)}
+                      </td>
+                      
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${isCancelled ? 'bg-gray-100 border-gray-200 text-gray-400' : 'bg-gray-100 border-gray-200 text-gray-500'}`}>
+                            <User size={10} />
+                          </div>
+                          <span className={`font-medium ${isCancelled ? 'text-gray-400' : 'text-gray-700'}`}>
+                            {tx.operator}
+                          </span>
+                        </div>
+                      </td>
+                      
+                      <td className="px-6 py-4 text-gray-400 text-right text-xs whitespace-nowrap">
                         {tx.date}
                       </td>
                     </tr>

@@ -22,18 +22,58 @@ export default function Settings() {
     }
   }, []);
 
-  
+  // Sayfa yüklendiğinde backend'den güncel sistem ayarlarını çekip ekrana basıyorum.
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const response = await fetch('http://localhost:5252/api/storage/settings');
+        if (response.ok) {
+          const data = await response.json();
+          setMaxCapacity(data.maxCapacity);
+          setMinSoc(data.minSoc);
+          setMaxSoc(data.maxSoc);
+          setEfficiency(data.efficiency);
+        }
+      } catch (error) {
+        console.error("Ayarlar backend'den çekilemedi:", error);
+      }
+    };
+    
+    fetchSettings();
+  }, []);
+
   const isAdmin = userRole === 'admin';
 
-  const handleSave = (e) => {
+  // Fetch ile veri göndereceğim için kaydetme fonksiyonunu async yaptım.
+  const handleSave = async (e) => { 
     e.preventDefault();
     
     //Eğer kullanıcı admin değilse, HTML üzerinden disabled silinip butona basılsa bile kaydetme fonksiyonunun çalışmasını engelliyorum.
     if (!isAdmin) return;
 
-    setIsSaved(true);
-    // 2.5 saniye sonra "Kaydedildi" yazısını geri al
-    setTimeout(() => setIsSaved(false), 2500);
+    try {
+      // Backend'e yeni ayarları kaydetmek için POST isteği atıyorum.
+      const response = await fetch('http://localhost:5252/api/storage/settings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          maxCapacity: Number(maxCapacity),
+          minSoc: Number(minSoc),
+          maxSoc: Number(maxSoc),
+          efficiency: Number(efficiency)
+        })
+      });
+
+      if (response.ok) {
+        setIsSaved(true);
+        // 2.5 saniye sonra "Kaydedildi" yazısını geri al
+        setTimeout(() => setIsSaved(false), 2500);
+      }
+    } catch (error) {
+      console.error("Ayarlar backend'e kaydedilemedi:", error);
+    }
   };
 
   return (
@@ -45,7 +85,7 @@ export default function Settings() {
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 text-gray-500 mb-4">
             <SettingsIcon size={24} />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Sistem Ayarları(su an statik)</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Sistem Ayarları</h1>
           <p className="text-sm text-gray-500 mt-2 max-w-lg mx-auto">
             Enerji depolama biriminizin kapasite, verimlilik ve güvenlik sınırlarını bu panel üzerinden yönetebilirsiniz.
           </p>

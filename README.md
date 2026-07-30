@@ -1,4 +1,5 @@
 # EDYS Panel (Enerji Depolama Yönetim Sistemi)
+
 Bu proje, SOC (State of Charge) değerini izlemek, yönetmek ve enerji piyasası verilerine dayalı arbitraj (alım-satım) kararları vermek amacıyla geliştirilmiş bir web uygulamasıdır. Proje, "Separation of Concerns" (Sorumlulukların Ayrılığı) prensibiyle React tabanlı bir Frontend ve .NET tabanlı bir Backend mimarisinden oluşmaktadır.
 
 ## 🚀 Proje Kapsamı ve Özellikler
@@ -12,13 +13,14 @@ Bu proje, SOC (State of Charge) değerini izlemek, yönetmek ve enerji piyasası
 ## 🛠 Kullanılan Teknolojiler
 
 **Frontend:**
-- React.js & React Router DOM
-- Tailwind CSS & Lucide React (İkonlar)
+- React.js & React Router DOM (Mimari ve Yönlendirme)
+- Tailwind CSS (Stil ve Responsive Tasarım)
+- Recharts (Dinamik Veri ve Grafik Görselleştirme)
+- Lucide React (Vektörel Modern İkonlar)
 
 **Backend:**
 - .NET 8 (C#)
-- ASP.NET Core Web API (Controllers & Singleton Services)
-- Swagger / OpenAPI (API Dokümantasyonu)
+- ASP.NET Core Web API (Controllers & Singleton In-Memory Services)
 
 ## ⚙️ Kurulum ve Çalıştırma
 
@@ -34,13 +36,15 @@ Proje iki ayrı katmandan (Backend ve Frontend) oluştuğu için tam entegrasyon
 1. Yeni bir terminal sekmesi açın ve Frontend klasörüne gidin: `cd Enerji_Frontend`
 2. Gerekli kütüphaneleri yükleyin: `npm install`
 3. React uygulamasını başlatın: `npm run dev`
-*(Uygulama tarayıcınızda açılacaktır.)*
+*(Uygulama tarayıcınızda ya da default olarak IDE üzerinde açılacaktır.)*
 
 ## 👤 Test Hesapları
 
 Sistemin .NET API üzerinden çalışan yetkilendirme (Login) kısmını test etmek için aşağıdaki hesaplar kullanılabilir:
 
-- **Sistem Yöneticisi (Admin):** `admin@edys.com` / `123` (Tam yetkili)
-- **Tesis Operatörü (Operator):** `operator@edys.com` / `123` (Sadece okuma yetkisi)
+- **Sistem Yöneticisi (Admin):** `admin@edys.com` / `123` (Tam yetkili, Ayarlar sayfasını düzenleyebilir)
+- **Tesis Operatörü (Operator):** `operator@edys.com` / `123` (Trade yapabilir, Ayarlar sayfasını sadece okuyabilir)
 
-*Not: Bu sürüm, önceki sürümlerde yapılan Frontend mimarisi üzerine Backend mimarisinin başladığı, klasör yapısının oluşturulduğu, ekstra olarak login ekranında kontrol yapılması ve devamında çalıştığının denenmesi ile ilgili bir sürümdür.*
+---
+
+*Not: Bu sürüm, önceki sürümlerde yapılan Frontend - Backend mimarisi üzerine klasör yapısının tamamlandığı, login ekranı dışında diğer sayfalarının da düzenlenip backend'e bağlandığı, bazı değişikliklerin yapılıp UI/UX tasarımının daha iyi olduğu bir sürümdür.*

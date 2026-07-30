@@ -13,5 +13,9 @@ namespace Enerji_Backend.Models
         public double Soc { get; set; }
         public string Operator { get; set; } = string.Empty;
         public string Date { get; set; } = string.Empty;
+
+        //Vazgeçilen/İptal edilen işlemleri loglamak için iki yeni özellik tanımladım.
+        public bool IsCancelled { get; set; } = false;
+        public string CancelReason { get; set; } = string.Empty;
     }
 }
