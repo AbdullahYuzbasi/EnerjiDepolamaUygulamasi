@@ -19,7 +19,7 @@ namespace Enerji_Backend.Services
             _settings = new SystemSettings();
             _transactions = new List<Transaction>();
             
-            //Sistem başladığında grafiğin ve mevcut durumun dolu gözükmesi için SOC'yi %80 olarak ayarladım.
+            // Sistem başladığında grafiğin ve mevcut durumun dolu gözükmesi için SOC'yi %80 olarak ayarladım.
             _state.CurrentSoc = 80.0;
             _state.CurrentCapacity = 80.0; // 100 MWh kapasite varsayımıyla
 
@@ -59,6 +59,12 @@ namespace Enerji_Backend.Services
             _settings.MinSoc = newSettings.MinSoc;
             _settings.MaxSoc = newSettings.MaxSoc;
             _settings.Efficiency = newSettings.Efficiency;
+
+            // Kapasite değiştiğinde Backend'deki SOC yüzdesini de anında yeniden hesapla!
+            if (_settings.MaxCapacity > 0) 
+            {
+                _state.CurrentSoc = (_state.CurrentCapacity / _settings.MaxCapacity) * 100;
+            }
         }
 
         // İşlem geçmişini getiren fonksiyonu yazdım.
@@ -67,9 +73,10 @@ namespace Enerji_Backend.Services
         // Şarj ve deşarj işlemlerini sınır ve verim kurallarına göre işleyen ana fonksiyon
         public string ProcessTransaction(string type, double amount, double price, string operatorName)
         {
-            // SOC yüzdesini MWh cinsine çevirdim.
-            double currentSocAmount = (_state.CurrentSoc / 100) * _settings.MaxCapacity;
-            double newSocAmount = currentSocAmount;
+            // DÜZELTİLEN KOD: Eski SOC yüzdesini tekrar MWh'ye çevirip matematiksel sapma yaratmak yerine, 
+            // doğrudan elimizdeki kesin MWh değeri olan CurrentCapacity'i (Gerçek depolanan enerjiyi) kullanıyoruz.
+            double newSocAmount = _state.CurrentCapacity; 
+            
             double loss = 0;
             double efficiencyMultiplier = _settings.Efficiency / 100.0;
 
@@ -113,19 +120,18 @@ namespace Enerji_Backend.Services
                 Loss = loss,
                 Efficiency = _settings.Efficiency,
                 Price = price,
-                Soc = newSocPercentage,
+                Soc = newSocPercentage, // Yeni dinamik yüzdeyi kaydeder
                 Operator = operatorName,
                 Date = DateTime.Now.ToString("dd.MM.yyyy HH:mm:ss"),
-                IsCancelled = false // Ekledim: Normal başarılı işlemlerde iptal bayrağı false olur.
+                IsCancelled = false // başarılı işlemlerde iptal bayrağı false olur.
             };
 
-            // En yeni işlem en üstte görünsün diye listenin en başına (0 =s indeks) ekledim.
+            // En yeni işlem en üstte görünsün diye listenin en başına (0. indeks) ekledim.
             _transactions.Insert(0, transaction);
 
             return "Success";
         }
 
-        // Ekledim: İşlemden vazgeçilme niyetini (İptal) batarya değerlerini HİÇ değiştirmeden loglayan özel fonksiyon.
         public void LogCancelledTransaction(string type, double amount, double price, string operatorName, string cancelReason)
         {
             var cancelledTransaction = new Transaction
@@ -136,14 +142,14 @@ namespace Enerji_Backend.Services
                 Loss = 0, // İşlem gerçekleşmediği için kayıp yok
                 Efficiency = _settings.Efficiency,
                 Price = price,
-                Soc = _state.CurrentSoc, // Mevcut SOC değerine hiç dokunmadan logluyoruz
+                Soc = _state.CurrentSoc, // Mevcut SOC değerine hiç dokunmuyoruz
                 Operator = operatorName,
                 Date = DateTime.Now.ToString("dd.MM.yyyy HH:mm:ss"),
                 IsCancelled = true, // İptal edildi damgasını vurduk
                 CancelReason = cancelReason // İptal nedenini kaydettik
             };
 
-            // Niyet edilen ancak iptal edilen işlemi de geçmiş tablosunun en üstüne ekledim.
+            // İptal edilen işlemi de geçmiş tablosunun en üstüne ekledim.
             _transactions.Insert(0, cancelledTransaction);
         }
     }

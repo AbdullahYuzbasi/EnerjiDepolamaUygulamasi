@@ -1,14 +1,16 @@
 # EDYS Panel (Enerji Depolama Yönetim Sistemi)
 
-Bu proje, SOC (State of Charge) değerini izlemek, yönetmek ve enerji piyasası verilerine dayalı arbitraj (alım-satım) kararları vermek amacıyla geliştirilmiş bir web uygulamasıdır. Proje, "Separation of Concerns" (Sorumlulukların Ayrılığı) prensibiyle React tabanlı bir Frontend ve .NET tabanlı bir Backend mimarisinden oluşmaktadır.
+## 🚀 Proje Kapsamı 
 
-## 🚀 Proje Kapsamı ve Özellikler
+Bu proje, SOC (State of Charge) değerini izlemek, yönetmek ve enerji piyasası verilerine dayalı arbitraj (alım-satım) kararları vermek amacıyla geliştirilmiş bir web uygulamasıdır. Proje, React tabanlı bir Frontend ve .NET tabanlı bir Backend mimarisinden oluşmaktadır.
 
-- **Dashboard:** Anlık SOC durumu, mevcut kapasite, döngü verimliliği ve anlık piyasa fiyatlarının görselleştirilmesi.
-- **İşlem ve Kontrol:** Sisteme manuel olarak şarj (alım) ve deşarj (satım) komutları gönderme. Yapay zeka tabanlı "Al/Sat/Bekle" karar destek simülasyonu.
-- **İşlem Geçmişi (Audit Trail):** Yapılan tüm işlemlerin detaylı (Fiyat, MWh, Verim Kaybı) ve "İşlemi Yapan" bazlı olarak listelenmesi.
-- **Sistem Ayarları & RBAC:** Minimum/Maksimum güvenli çalışma aralıklarının ve sistem verimliliğinin tanımlanması. Rol bazlı erişim kontrolü ile sadece "Admin" yetkisine sahip kullanıcıların ayarları değiştirebilmesi.
-- **Dinamik Veri Yönetimi:** Arka planda çalışan Singleton tabanlı .NET servisi sayesinde verilerin RAM üzerinde güvenle tutulması ve iş kurallarının (limit ve verim kontrolleri) otonom olarak API seviyesinde denetlenmesi.
+## 🚀 Proje Özellikler
+
+- **Dashboard:** Anlık SOC durumu, mevcut kapasite, döngü verimliliği ve anlık piyasa fiyatlarının görselleştirilmesi. Ayar değişikliklerinde (maksimum kapasite vb.) SOC değerinin anında ve matematiksel olarak dinamik yeniden hesaplanması.
+- **İşlem ve Kontrol:** Sisteme manuel olarak şarj (alım) ve deşarj (satım) komutları gönderme. Fiyat ve mevcut SOC verisine göre çalışan yapay zeka tabanlı "Al/Sat/Bekle" dinamik karar destek simülasyonu. 
+- **İşlem Geçmişi (Audit Trail):** Gerçekleşen işlemlerin ve kullanıcı tarafından iptal edilen (Soft Cancel) eylemlerin detaylı (Fiyat, MWh, Verim Kaybı, İptal Nedeni) ve "İşlemi Yapan" bazlı olarak doğrudan API üzerinden canlı listelenmesi.
+- **Sistem Ayarları & RBAC:** Minimum/Maksimum güvenli çalışma aralıklarının ve sistem verimliliğinin tanımlanması. Rol bazlı erişim kontrolü ile arayüzdeki formun yetkisiz kullanıcılara kilitlenmesi ve **Backend (C#) seviyesinde** 403 Forbidden koruması (Sadece "Admin" rolünün POST yapabilmesi).
+- **Dinamik Veri Yönetimi:** Arka planda çalışan Singleton tabanlı .NET servisi sayesinde verilerin RAM üzerinde güvenle tutulması ve iş kurallarının (limit ve verim kontrolleri, State Desync önlemleri) otonom olarak API seviyesinde denetlenmesi.
 
 ## 🛠 Kullanılan Teknolojiler
 
@@ -19,12 +21,12 @@ Bu proje, SOC (State of Charge) değerini izlemek, yönetmek ve enerji piyasası
 - Lucide React (Vektörel Modern İkonlar)
 
 **Backend:**
-- .NET 8 (C#)
+- **.NET 10 (C#)**
 - ASP.NET Core Web API (Controllers & Singleton In-Memory Services)
 
 ## ⚙️ Kurulum ve Çalıştırma
 
-Proje iki ayrı katmandan (Backend ve Frontend) oluştuğu için tam entegrasyonlu çalışması adına sırasıyla iki sunucunun da ayağa kaldırılması gerekmektedir.
+Proje iki ayrı katmandan (Backend ve Frontend) oluştuğu için tam entegrasyonlu çalışması adına sırasıyla iki sunucunun da ayağa kaldırılması gerekmektedir. *(Not: Proje deposu optimize edilmiş olup gereksiz derleme çıktıları `.gitignore` ile yalıtılmıştır.)*
 
 ### 1. Adım: Backend'i Başlatmak
 1. Yeni bir terminal açın ve Backend klasörüne gidin: `cd Enerji_Backend`
@@ -40,11 +42,11 @@ Proje iki ayrı katmandan (Backend ve Frontend) oluştuğu için tam entegrasyon
 
 ## 👤 Test Hesapları
 
-Sistemin .NET API üzerinden çalışan yetkilendirme (Login) kısmını test etmek için aşağıdaki hesaplar kullanılabilir:
+Sistemin .NET API üzerinden çalışan yetkilendirme (Login) kısmını uçtan uca test etmek için aşağıdaki hesaplar kullanılabilir:
 
-- **Sistem Yöneticisi (Admin):** `admin@edys.com` / `123` (Tam yetkili, Ayarlar sayfasını düzenleyebilir)
-- **Tesis Operatörü (Operator):** `operator@edys.com` / `123` (Trade yapabilir, Ayarlar sayfasını sadece okuyabilir)
+- **Sistem Yöneticisi (Admin):** `admin@edys.com` / `123` (Tam yetkili, Ayarlar sayfasını görüntüleyebilir ve değiştirebilir.)
+- **Tesis Operatörü (Operator):** `operator@edys.com` / `123` (İşlem terminalini kullanabilir, Ayarlar sayfasını yalnızca okuyabilir - Backend API kalkanı ile korunmaktadır.)
 
 ---
 
-*Not: Bu sürüm, önceki sürümlerde yapılan Frontend - Backend mimarisi üzerine klasör yapısının tamamlandığı, login ekranı dışında diğer sayfalarının da düzenlenip backend'e bağlandığı, bazı değişikliklerin yapılıp UI/UX tasarımının daha iyi olduğu bir sürümdür.*
+*Not: Bu **v3.2** sürümü; önceki mimarinin üzerine eksik kısımların tamamen backend'e bağlandığı, kapasite değişiminde dinamik SOC algoritmasının devreye girdiği, C# tarafında rol doğrulaması yapıldığı ve gereksiz bin/obj dosyalarının repodan temizlendiği en güncel, stabil sürümüdür.*

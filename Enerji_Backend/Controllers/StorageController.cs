@@ -32,11 +32,24 @@ namespace Enerji_Backend.Controllers
             return Ok(_storageService.GetSettings());
         }
 
-        [HttpPost("settings")]
-        public IActionResult UpdateSettings([FromBody] SystemSettings newSettings)
+        //React'ten Settings ile birlikte Rol bilgisini alabilmek
+        public class SettingsUpdateRequest
         {
+            public SystemSettings Settings { get; set; }
+            public string Role { get; set; } = string.Empty;
+        }
+
+        [HttpPost("settings")]
+        public IActionResult UpdateSettings([FromBody] SettingsUpdateRequest request)
+        {
+            if (request.Role != "admin")
+            {
+                // Eğer istek atan kişi admin değilse, işlemi reddedip 403 Forbidden (Yasak) dönüyoruz.
+                return StatusCode(403, new { message = "Erişim Reddedildi: Yalnızca Sistem Yöneticileri ayarları değiştirebilir." });
+            }
+
             // React'teki admin'den gelen yeni ayarları servise (hafıza) kaydettim.
-            _storageService.UpdateSettings(newSettings);
+            _storageService.UpdateSettings(request.Settings);
             return Ok(new { message = "Ayarlar başarıyla güncellendi." });
         }
 
@@ -72,7 +85,7 @@ namespace Enerji_Backend.Controllers
             return BadRequest(new { message = result });
         }
 
-        // Ekledim: Frontend'den gelen vazgeçilen/iptal edilen işlem verilerini karşılamak için DTO
+        // Frontend'den gelen vazgeçilen/iptal edilen işlem verilerini karşılamak için DTO
         public class CancelRequest
         {
             public string Type { get; set; } = string.Empty;
@@ -82,7 +95,7 @@ namespace Enerji_Backend.Controllers
             public string CancelReason { get; set; } = string.Empty;
         }
 
-        // Ekledim: İptal edilen işlemleri karşılayıp RAM'e loglayan yepyeni bir API kapısı
+        //İptal edilen işlemleri RAM'e loglayan kisim
         [HttpPost("cancel")]
         public IActionResult CancelTransaction([FromBody] CancelRequest request)
         {

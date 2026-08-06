@@ -205,13 +205,13 @@ export default function Control() {
         showToast('success', 'İptal işlemi sisteme başarıyla loglandı.');
       } else {
         setIsProcessing(false);
-        // Güncelledim: İptal loglanırken bir hata olsa bile modal kapanacak
+        //İptal loglanırken bir hata olsa bile modal kapanacak
         closeModal();
         showToast('error', 'İptal loglanırken bir hata oluştu.');
       }
     } catch (error) {
       setIsProcessing(false);
-      // Güncelledim: Bağlantı hatasında da kapanacak
+      // Bağlantı hatasında da kapanacak
       closeModal();
       showToast('error', 'Sunucu ile iletişim kurulamadı.');
     }
@@ -557,7 +557,7 @@ export default function Control() {
         </div>
       )}
 
-      {/* Zarif Toast Notification (Bildirim Kutusu) */}
+      {/* Zarif Toast Notification "Bildirim Kutusu" */}
       {toast.show && (
         <div className="fixed bottom-6 right-6 z-[100] animate-fade-in">
           <div className={`flex items-center gap-3 px-5 py-4 rounded-2xl shadow-2xl border bg-white ${

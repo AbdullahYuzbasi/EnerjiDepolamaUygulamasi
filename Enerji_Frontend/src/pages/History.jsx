@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'; 
-// Ekledim: Bilgi balonu (Tooltip) için 'Info' ikonunu dahil ettim.
+//Bilgi balonu için 'Info' ikonunu dahil ettim.
 import { Search, ArrowDown, ArrowUp, X, Filter, User, Info } from 'lucide-react';  
 
 export default function History() {
@@ -18,7 +18,7 @@ export default function History() {
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        // Ekledim: Tarayıcı önbelleğini kırmak için Control.jsx'teki aynı sert kuralları buraya da ekledim.
+        // Tarayıcı önbelleğini kırmak için Control.jsx'teki aynı sert kuralları buraya da ekledim.
         const timestamp = new Date().getTime(); 
         const noCacheHeaders = {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -50,7 +50,7 @@ export default function History() {
       const matchesSearch = tx.id.toLowerCase().includes(searchTerm.toLowerCase()) || 
                             tx.date.includes(searchTerm);
       
-      // Güncelledim: 2. İşlem Tipi (Artık backend'den gelen IsCancelled bayrağına göre akıllı filtreleme yapıyoruz)
+      //  2. İşlem Tipi (Artık backend'den gelen IsCancelled bayrağına göre akıllı filtreleme yapıyoruz)
       const matchesType = (() => {
         if (filterType === "Tümü") return true;
         if (filterType === "İptal") return tx.isCancelled === true;
@@ -69,7 +69,7 @@ export default function History() {
     });
   }, [searchTerm, filterType, minPrice, maxPrice, filterOperator, transactions]); 
 
-  // Güncelledim: Tablodaki Rozetlerin Stillerini Belirleyen Fonksiyon (Artık tx objesinin tamamını alıp isCancelled durumuna bakıyor)
+  // Tablodaki Rozetlerin Stillerini Belirleyen Fonksiyon 
   const getBadgeStyle = (tx) => {
     if (tx.isCancelled) {
       return { 

@@ -10,7 +10,7 @@ export default function Settings() {
   
   const [isSaved, setIsSaved] = useState(false);
 
-  //Kullanıcının rolünü tutacağım state'i tanımladım (varsayılanı 'operator' yaptım).
+  //Kullanıcının rolünü tutacağım state'i tanımladım (varsayılan, operator).
   const [userRole, setUserRole] = useState('operator');
 
   //Sayfa yüklendiğinde hafızadaki kullanıcı verisini çekip rolünü state'e atıyorum.
@@ -48,7 +48,7 @@ export default function Settings() {
   const handleSave = async (e) => { 
     e.preventDefault();
     
-    //Eğer kullanıcı admin değilse, HTML üzerinden disabled silinip butona basılsa bile kaydetme fonksiyonunun çalışmasını engelliyorum.
+    // Frontend Koruması
     if (!isAdmin) return;
 
     try {
@@ -58,18 +58,25 @@ export default function Settings() {
         headers: {
           'Content-Type': 'application/json'
         },
+        // GÜNCELLEME: Backend'deki güvenlik kontrolü (C Grubu maddesi) için kullanıcının rolünü de yolluyoruz!
         body: JSON.stringify({
-          maxCapacity: Number(maxCapacity),
-          minSoc: Number(minSoc),
-          maxSoc: Number(maxSoc),
-          efficiency: Number(efficiency)
+          settings: {
+            maxCapacity: Number(maxCapacity),
+            minSoc: Number(minSoc),
+            maxSoc: Number(maxSoc),
+            efficiency: Number(efficiency)
+          },
+          role: userRole // 'admin' veya 'operator' olarak backend'e gidiyor
         })
       });
 
       if (response.ok) {
         setIsSaved(true);
-        // 2.5 saniye sonra "Kaydedildi" yazısını geri al
         setTimeout(() => setIsSaved(false), 2500);
+      } else {
+        // Eğer backend'den yetki hatası gelirse konsola basıyoruz
+        const errorData = await response.json();
+        console.error("Yetki Hatası:", errorData.message);
       }
     } catch (error) {
       console.error("Ayarlar backend'e kaydedilemedi:", error);
