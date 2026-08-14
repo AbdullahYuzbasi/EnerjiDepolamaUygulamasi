@@ -18,7 +18,8 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowReactApp",
         policy =>
         {
-            policy.WithOrigins("http://localhost:5173") // Frontend adresin
+            // Hem yerel test ortamına (localhost) hem de GitHub Pages canlı ortamına izin vermek istedim.
+            policy.WithOrigins("http://localhost:5173", "https://abdullahyuzbasi.github.io") 
                   .AllowAnyHeader()
                   .AllowAnyMethod();
         });

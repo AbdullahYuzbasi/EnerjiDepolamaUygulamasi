@@ -37,9 +37,10 @@ export default function Control() {
         'Expires': '0'
       };
       
+      // DÜZELTME: Sabit localhost adresi yerine .env dosyasındaki VITE_API_URL değişkenini kullandım.
       const [stateRes, settingsRes] = await Promise.all([
-        fetch(`http://localhost:5252/api/storage/state?t=${timestamp}`, { headers: noCacheHeaders, cache: 'no-store' }),
-        fetch(`http://localhost:5252/api/storage/settings?t=${timestamp}`, { headers: noCacheHeaders, cache: 'no-store' })
+        fetch(`${import.meta.env.VITE_API_URL}/api/storage/state?t=${timestamp}`, { headers: noCacheHeaders, cache: 'no-store' }),
+        fetch(`${import.meta.env.VITE_API_URL}/api/storage/settings?t=${timestamp}`, { headers: noCacheHeaders, cache: 'no-store' })
       ]);
 
       const stateData = await stateRes.json();
@@ -137,7 +138,8 @@ export default function Control() {
     setIsProcessing(true);
 
     try {
-      const response = await fetch('http://localhost:5252/api/storage/transaction', {
+      // DÜZELTME: İşlem onayı fetch URL'sini .env'den alacak şekilde güncelledim.
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/storage/transaction`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -183,7 +185,8 @@ export default function Control() {
     setIsProcessing(true);
 
     try {
-      const response = await fetch('http://localhost:5252/api/storage/cancel', {
+      // DÜZELTME: İptal onayı fetch URL'sini .env'den alacak şekilde güncelledim.
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/storage/cancel`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

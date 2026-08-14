@@ -26,7 +26,8 @@ export default function History() {
           'Expires': '0'
         };
 
-        const response = await fetch(`http://localhost:5252/api/storage/history?t=${timestamp}`, {
+        // DÜZELTME: Sabit localhost adresi yerine .env dosyasındaki VITE_API_URL değişkenini kullandım.
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/storage/history?t=${timestamp}`, {
           headers: noCacheHeaders,
           cache: 'no-store'
         });

@@ -26,7 +26,8 @@ export default function Settings() {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const response = await fetch('http://localhost:5252/api/storage/settings');
+        // DÜZELTME: Sabit localhost adresi yerine .env dosyasındaki VITE_API_URL değişkenini kullandım.
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/storage/settings`);
         if (response.ok) {
           const data = await response.json();
           setMaxCapacity(data.maxCapacity);
@@ -52,8 +53,9 @@ export default function Settings() {
     if (!isAdmin) return;
 
     try {
+      // DÜZELTME: Sabit localhost adresi yerine .env dosyasındaki VITE_API_URL değişkenini kullandım.
       // Backend'e yeni ayarları kaydetmek için POST isteği atıyorum.
-      const response = await fetch('http://localhost:5252/api/storage/settings', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/storage/settings`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

@@ -5,6 +5,13 @@ using Enerji_Backend.Models;
 
 namespace Enerji_Backend.Services
 {
+    // Magic Strings(duzeltme): İşlem tiplerini sabitlere bağladım. 
+    public static class TransactionTypes
+    {
+        public const string Charge = "Şarj";
+        public const string Discharge = "Deşarj";
+    }
+
     public class StorageManagerService
     {
         // Verileri RAM'de tutmak için private değişkenler oluşturdum.
@@ -23,24 +30,24 @@ namespace Enerji_Backend.Services
             _state.CurrentSoc = 80.0;
             _state.CurrentCapacity = 80.0; // 100 MWh kapasite varsayımıyla
 
-            // Arayüz boş kalmasın diye test amaçlı sahte bir geçmiş işlemi ekledim.
+            // DÜZELTME: Başlangıç mock verilerinde de Guid kullandım.
             _transactions.Add(new Transaction 
             { 
-                Id = "TX-1001", Type = "Şarj", Amount = 20, Loss = 1.0, 
+                Id = "TX-" + Guid.NewGuid().ToString().Substring(0,8).ToUpper(), Type = TransactionTypes.Charge, Amount = 20, Loss = 1.0, 
                 Efficiency = 95, Price = 1450.50, Soc = 60.0, 
                 Operator = "Ahmet Yılmaz", Date = DateTime.Now.AddHours(-4).ToString("dd.MM.yyyy HH:mm:ss") 
             });
             
             _transactions.Add(new Transaction 
             { 
-                Id = "TX-1002", Type = "Deşarj", Amount = 10, Loss = 0.0, 
+                Id = "TX-" + Guid.NewGuid().ToString().Substring(0,8).ToUpper(), Type = TransactionTypes.Discharge, Amount = 10, Loss = 0.0, 
                 Efficiency = 95, Price = 2100.00, Soc = 50.0, 
                 Operator = "Ayşe Demir", Date = DateTime.Now.AddHours(-2).ToString("dd.MM.yyyy HH:mm:ss") 
             });
             
             _transactions.Add(new Transaction 
             { 
-                Id = "TX-1003", Type = "Şarj", Amount = 31.5, Loss = 1.5, 
+                Id = "TX-" + Guid.NewGuid().ToString().Substring(0,8).ToUpper(), Type = TransactionTypes.Charge, Amount = 31.5, Loss = 1.5, 
                 Efficiency = 95, Price = 1250.00, Soc = 80.0, 
                 Operator = "Sistem (Oto)", Date = DateTime.Now.AddMinutes(-30).ToString("dd.MM.yyyy HH:mm:ss") 
             });
@@ -49,12 +56,18 @@ namespace Enerji_Backend.Services
         // Mevcut batarya durumunu getiren fonksiyon
         public StorageState GetState() => _state;
 
-        // Mevcut ayarları getiren fonksiyo
+        // Mevcut ayarları getiren fonksiyon
         public SystemSettings GetSettings() => _settings;
 
         // Ayarları güncelleyen fonksiyon
         public void UpdateSettings(SystemSettings newSettings)
         {
+            // DÜZELTME: Ayar girdileri doğrulama
+            if (newSettings.MaxCapacity <= 0 || newSettings.MinSoc >= newSettings.MaxSoc || newSettings.Efficiency <= 0 || newSettings.Efficiency > 100)
+            {
+                return; 
+            }
+
             _settings.MaxCapacity = newSettings.MaxCapacity;
             _settings.MinSoc = newSettings.MinSoc;
             _settings.MaxSoc = newSettings.MaxSoc;
@@ -73,24 +86,33 @@ namespace Enerji_Backend.Services
         // Şarj ve deşarj işlemlerini sınır ve verim kurallarına göre işleyen ana fonksiyon
         public string ProcessTransaction(string type, double amount, double price, string operatorName)
         {
-            // DÜZELTİLEN KOD: Eski SOC yüzdesini tekrar MWh'ye çevirip matematiksel sapma yaratmak yerine, 
-            // doğrudan elimizdeki kesin MWh değeri olan CurrentCapacity'i (Gerçek depolanan enerjiyi) kullanıyoruz.
-            double newSocAmount = _state.CurrentCapacity; 
+            // DÜZELTME: Negatif miktar, NaN (Geçersiz Sayı) ve Sıfır Kapasite koruması eklendi.
+            if (amount <= 0 || double.IsNaN(amount))
+                return "İşlem reddedildi: Geçersiz miktar.";
             
-            double loss = 0;
-            double efficiencyMultiplier = _settings.Efficiency / 100.0;
+            if (_settings.MaxCapacity <= 0)
+                return "İşlem reddedildi: Sistem kapasitesi geçersiz (0). İşlem yapılamaz.";
 
-            if (type == "Şarj")
+            double newSocAmount = _state.CurrentCapacity; 
+            double loss = 0;
+            
+            // DÜZELTME: Toplam kaybı bulup ikiye bölüyoruz (Yarısı şarjda, yarısı deşarjda olacak sekilde)
+            double totalLossRate = 1.0 - (_settings.Efficiency / 100.0);
+            double halfLossRate = totalLossRate / 2.0;
+
+            if (type == TransactionTypes.Charge)
             {
-                // Şarj işleminde verim kaybını hesapladım.
-                loss = amount * (1 - efficiencyMultiplier);
+                // Şarj olurken enerjinin bir kısmı ısıya dönüşüp kayboluyor
+                loss = amount * halfLossRate;
                 double effectiveAmount = amount - loss;
                 newSocAmount += effectiveAmount;
             }
-            else if (type == "Deşarj")
+            else if (type == TransactionTypes.Discharge)
             {
-                // Deşarj işleminde kapasiteden doğrudan düşüm yaptım.
-                newSocAmount -= amount;
+                // Deşarj olurken de kayıp yaşanır. 
+                loss = amount * halfLossRate;
+                double totalDrawn = amount + loss;
+                newSocAmount -= totalDrawn;
             }
             else
             {
@@ -110,20 +132,27 @@ namespace Enerji_Backend.Services
             // KURALLARA UYUYORSA yeni durumu hafızaya kaydettim.
             _state.CurrentSoc = newSocPercentage;
             _state.CurrentCapacity = newSocAmount;
+            
+            // Her başarılı işlemde batarya sağlığı kucukte olsa eskir.
+            if (_state.Soh > 50.0) 
+            {
+                _state.Soh -= 0.1; 
+            }
 
             // Başarılı işlemi geçmiş tablosuna ekledim.
             var transaction = new Transaction
             {
-                Id = "TX-" + new Random().Next(1001, 9999),
+                // DÜZELTME: Random ID yerine benzersiz (Unique) Guid yapısına geçildi.
+                Id = "TX-" + Guid.NewGuid().ToString().Substring(0,8).ToUpper(),
                 Type = type,
                 Amount = amount,
-                Loss = loss,
+                Loss = Math.Round(loss, 2), // Kaybı 2 ondalığa yuvarlayarak daha şık gösterelim
                 Efficiency = _settings.Efficiency,
                 Price = price,
-                Soc = newSocPercentage, // Yeni dinamik yüzdeyi kaydeder
+                Soc = Math.Round(newSocPercentage, 2), 
                 Operator = operatorName,
                 Date = DateTime.Now.ToString("dd.MM.yyyy HH:mm:ss"),
-                IsCancelled = false // başarılı işlemlerde iptal bayrağı false olur.
+                IsCancelled = false 
             };
 
             // En yeni işlem en üstte görünsün diye listenin en başına (0. indeks) ekledim.
@@ -136,20 +165,20 @@ namespace Enerji_Backend.Services
         {
             var cancelledTransaction = new Transaction
             {
-                Id = "TX-" + new Random().Next(1001, 9999),
+                // DÜZELTME: Random ID iptal edilen işlemlerde de Guid olarak güncellendi.
+                Id = "TX-" + Guid.NewGuid().ToString().Substring(0,8).ToUpper(),
                 Type = type,
                 Amount = amount,
                 Loss = 0, // İşlem gerçekleşmediği için kayıp yok
                 Efficiency = _settings.Efficiency,
                 Price = price,
-                Soc = _state.CurrentSoc, // Mevcut SOC değerine hiç dokunmuyoruz
+                Soc = Math.Round(_state.CurrentSoc, 2), 
                 Operator = operatorName,
                 Date = DateTime.Now.ToString("dd.MM.yyyy HH:mm:ss"),
-                IsCancelled = true, // İptal edildi damgasını vurduk
-                CancelReason = cancelReason // İptal nedenini kaydettik
+                IsCancelled = true, 
+                CancelReason = cancelReason 
             };
 
-            // İptal edilen işlemi de geçmiş tablosunun en üstüne ekledim.
             _transactions.Insert(0, cancelledTransaction);
         }
     }

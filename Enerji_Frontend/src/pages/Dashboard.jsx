@@ -9,8 +9,8 @@ export default function Dashboard() {
   const [fullDayHistory, setFullDayHistory] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
 
-  // Backend'den gelecek olan verileri tutacağımız dinamik stateler.
-  const [systemData, setSystemData] = useState({ soc: 0, capacity: 0 });
+  // Backend'den gelecek olan verileri tutacağımız dinamik stateler. (SOH buraya eklendi!)
+  const [systemData, setSystemData] = useState({ soc: 0, capacity: 0, soh: 98.5 });
   const [settings, setSettings] = useState({ maxCap: 100, min: 15, max: 90, eff: 95 });
   const [chartData, setChartData] = useState([]);
   const [metrics, setMetrics] = useState({ totalIn: 0, totalOut: 0, totalLoss: 0 });
@@ -45,21 +45,26 @@ export default function Dashboard() {
     //Backend'deki State, Ayarlar ve Geçmiş verileri çekiyorum.
     const fetchBackendData = async () => {
       try {
+        // DÜZELTME: Sabit localhost adresleri yerine .env dosyasındaki VITE_API_URL değişkenini kullandım.
         const [stateRes, settingsRes, historyRes] = await Promise.all([
-          fetch('http://localhost:5252/api/storage/state'),
-          fetch('http://localhost:5252/api/storage/settings'),
-          fetch('http://localhost:5252/api/storage/history')
+          fetch(`${import.meta.env.VITE_API_URL}/api/storage/state`),
+          fetch(`${import.meta.env.VITE_API_URL}/api/storage/settings`),
+          fetch(`${import.meta.env.VITE_API_URL}/api/storage/history`)
         ]);
 
         const stateData = await stateRes.json();
         const settingsData = await settingsRes.json();
         const historyData = await historyRes.json();
 
-        // 1. SOC ve Kapasiteyi güncelliyorum
-        // HARİKA DÜZELTME BURADA: Admin maks kapasiteyi değiştirdiğinde SOC değerinin
-        // eski oranda kalmaması için, (Mevcut Kapasite / Maks Kapasite) * 100 formülüyle SOC'yi gerçek zamanlı hesaplıyoruz.
+        // 1. SOC, Kapasite ve SOH (Sağlık) güncelliyorum
         const dynamicSoc = (stateData.currentCapacity / settingsData.maxCapacity) * 100;
-        setSystemData({ soc: dynamicSoc, capacity: stateData.currentCapacity });
+        
+        // DÜZELTME: Backend'den gelen SOH (Sağlık) verisini de state'e kaydediyoruz!
+        setSystemData({ 
+          soc: dynamicSoc, 
+          capacity: stateData.currentCapacity,
+          soh: stateData.soh 
+        });
         
         // 2. Limit ayarlarını güncelliyorum
         setSettings({ 
@@ -72,11 +77,14 @@ export default function Dashboard() {
         // 3. Geçmiş işlemlere bakarak Giren/Çıkan toplam enerjiyi hesaplıyorum
         let tIn = 0, tOut = 0, tLoss = 0;
         historyData.forEach(tx => {
-          if (tx.type === 'Şarj') {
-            tIn += tx.amount;
-            tLoss += tx.loss;
-          } else if (tx.type === 'Deşarj') {
-            tOut += tx.amount;
+          // İptal edilen işlemleri toplam hesaplamalarından çıkardım ki metriklerimiz doğru sonuç versin.
+          if (!tx.isCancelled) {
+            if (tx.type === 'Şarj') {
+              tIn += tx.amount;
+              tLoss += tx.loss;
+            } else if (tx.type === 'Deşarj') {
+              tOut += tx.amount;
+            }
           }
         });
         setMetrics({ totalIn: tIn, totalOut: tOut, totalLoss: tLoss });
@@ -90,10 +98,13 @@ export default function Dashboard() {
 
         const sortedHistory = [...historyData].sort((a, b) => parseDate(a.date) - parseDate(b.date));
         
-        const formattedChart = sortedHistory.map(tx => {
-          const timeStr = tx.date.split(' ')[1].substring(0, 5); // "06:00:20" -> "06:00"
-          return { time: timeStr, soc: tx.soc };
-        });
+        // İptal edilen işlemleri grafikten süzdüm ve noktaların ezilmemesi için saniyeleri kırpan kısmı kaldırdım.
+        const formattedChart = sortedHistory
+          .filter(tx => !tx.isCancelled)
+          .map(tx => {
+            const timeStr = tx.date.split(' ')[1]; // "06:00:20" -> "06:00:20"
+            return { time: timeStr, soc: tx.soc };
+          });
         
         setChartData(formattedChart);
 
@@ -184,7 +195,8 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">SOH (Sağlık)</p>
-                  <p className="text-xs text-gray-900 font-semibold">%98.5</p>
+                  {/* DÜZELTME: SOH verisi artık statik değil, systemData objesinden dinamik olarak geliyor! */}
+                  <p className="text-xs text-gray-900 font-semibold">%{systemData.soh.toFixed(1)}</p>
                 </div>
               </div>
               

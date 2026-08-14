@@ -15,9 +15,9 @@ export default function Login() {
     setError(''); 
 
     try {
-      // Artık yerel bir json dosyasını değil, ayağa kaldırdığımız .NET API'sini çağırıyorum.
+      // DÜZELTME: Sabit localhost adresi yerine .env dosyasındaki VITE_API_URL değişkenini kullandım.
       // POST metodu ile kullanıcı adı ve şifreyi güvenli bir şekilde Backend'e yolluyorum.
-      const response = await fetch('http://localhost:5252/api/auth/login', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

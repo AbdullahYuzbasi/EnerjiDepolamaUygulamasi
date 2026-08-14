@@ -3,6 +3,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Enerji_Backend.Models;
 using Enerji_Backend.Services;
+using System.ComponentModel.DataAnnotations; //([Required]) kütüphanesi
 
 namespace Enerji_Backend.Controllers
 {
@@ -32,9 +33,11 @@ namespace Enerji_Backend.Controllers
             return Ok(_storageService.GetSettings());
         }
 
-        //React'ten Settings ile birlikte Rol bilgisini alabilmek
+        // React'ten Settings ile birlikte Rol bilgisini alabilmek
         public class SettingsUpdateRequest
         {
+            // DÜZELTME: [Required] ile Settings objesinin gönderilmesini zorunlu oldu
+            [Required(ErrorMessage = "Ayarlar verisi boş bırakılamaz.")]
             public SystemSettings Settings { get; set; }
             public string Role { get; set; } = string.Empty;
         }
@@ -44,8 +47,14 @@ namespace Enerji_Backend.Controllers
         {
             if (request.Role != "admin")
             {
-                // Eğer istek atan kişi admin değilse, işlemi reddedip 403 Forbidden (Yasak) dönüyoruz.
+                // Eğer istek atan kişi admin değilse, işlemi reddedip 403 Forbidden dönüyoruz.
                 return StatusCode(403, new { message = "Erişim Reddedildi: Yalnızca Sistem Yöneticileri ayarları değiştirebilir." });
+            }
+
+            // DÜZELTME (Null Guard): Eğer obje bir şekilde null gelirse sunucunun çökmesini engelliyoruz
+            if (request.Settings == null)
+            {
+                return BadRequest(new { message = "Geçersiz İstek: Ayarlar verisi bulunamadı." });
             }
 
             // React'teki admin'den gelen yeni ayarları servise (hafıza) kaydettim.
