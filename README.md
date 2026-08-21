@@ -4,37 +4,28 @@
 
 Bu proje, SOC (State of Charge) değerini izlemek, yönetmek ve enerji piyasası verilerine dayalı arbitraj (alım-satım) kararları vermek amacıyla geliştirilmiş bir web uygulamasıdır. Proje, React tabanlı bir Frontend ve .NET tabanlı bir Backend mimarisinden oluşmaktadır.
 
-## 🚀 Proje Özellikleri
+# ⚠️ ÖNEMLİ: GÜVENLİK VE KABUL EDİLEN RİSK (OWASP A01)
 
-- **Dashboard:** Anlık SOC durumu, mevcut kapasite, döngü verimliliği ve anlık piyasa fiyatlarının görselleştirilmesi. Ayar değişikliklerinde (maksimum kapasite vb.) SOC değerinin anında ve matematiksel olarak dinamik yeniden hesaplanması.
-- **İşlem ve Kontrol:** Sisteme manuel olarak şarj (alım) ve deşarj (satım) komutları gönderme. Fiyat ve mevcut SOC verisine göre çalışan yapay zeka tabanlı "Al/Sat/Bekle" dinamik karar destek simülasyonu. 
-- **İşlem Geçmişi (Audit Trail):** Gerçekleşen işlemlerin ve kullanıcı tarafından iptal edilen (Soft Cancel) eylemlerin detaylı (Fiyat, MWh, Verim Kaybı, İptal Nedeni) ve "İşlemi Yapan" bazlı olarak doğrudan API üzerinden canlı listelenmesi.
-- **Sistem Ayarları & RBAC:** Minimum/Maksimum güvenli çalışma aralıklarının ve sistem verimliliğinin tanımlanması. Rol bazlı erişim kontrolü ile arayüzdeki formun yetkisiz kullanıcılara kilitlenmesi ve **Backend (C#) seviyesinde** 403 Forbidden koruması (Sadece "Admin" rolünün POST yapabilmesi).
-- **Dinamik Veri Yönetimi:** Arka planda çalışan Singleton tabanlı .NET servisi sayesinde verilerin RAM üzerinde güvenle tutulması ve iş kurallarının (limit ve verim kontrolleri, State Desync önlemleri) otonom olarak API seviyesinde denetlenmesi.
+Projenin mevcut kapsamı ve bir prototip olması gereği, arayüzde çalışan rol tabanlı yetkilendirme (admin/operator) gerçek bir JWT (JSON Web Token) veya Session altyapısına dayanmamaktadır. Yetkilendirme işlemi, istemciden gönderilen statik bir string değere bağlı "Demo" amaçlı bir kurgudur. Bu durumun bir Kırık Erişim Kontrolü (Broken Access Control) zafiyeti yaratabileceğinin farkındalığıyla, proje ölçeği doğrultusunda bu durum bir **Kabul Edilen Risk (Accepted Risk)** olarak projelendirilmiş ve dokümante edilmiştir.
 
-## 📝 Sürüm Notları ve Mimari (v3.3 Güncellemesi)
+## 📝 Sürüm Notları ve Mimari (v3.4 Güncellemesi)
 
-Bu sürümde, değerlendirme raporunda belirtilen tüm bulgular analiz edilmiş, sisteme entegre edilmiş ve başarıyla çözülmüştür.
+Bu sürümde auth ile ilgili aciklama yapilmak ve otomatik testler sisteme entegre edilmek istenmistir.
 
-- **Kimlik Doğrulama (Fake Auth) ve Kabul Edilen Risk (OWASP A01):** Projenin mevcut kapsamı gereği, arayüzde çalışan rol tabanlı yetkilendirme (admin/operator) gerçek bir JWT (JSON Web Token) veya Session altyapısına dayanmamaktadır. Yetkilendirme işlemi, istemciden gönderilen statik bir string değere bağlı "Demo" amaçlı bir kurgudur. Bu durumun bir Kırık Erişim Kontrolü (Broken Access Control) zafiyeti yaratabileceğinin farkındalığıyla, proje ölçeği doğrultusunda bu durum bir **Kabul Edilen Risk (Accepted Risk)** olarak projelendirilmiştir.
-- **Matematiksel Sistem Koruması:** Backend tarafındaki şarj/deşarj algoritmasına sıfıra bölme (Zero-Division), negatif işlem (`amount <= 0`) ve geçersiz sayı (`NaN`) kalkanları eklenmiştir.
-- **Dinamik ve Kriptolojik Kimlikler:** Hızlı işlemlerde yaşanabilecek çakışmaları (Collision) önlemek adına, işlem kimlikleri `Random` sayı üretimi yerine evrensel benzersiz `Guid.NewGuid()` yapısına geçirilmiştir.
-- **Verim Asimetrisi ve Dinamik SOH:** Gerçek hayat fiziğine uygun olarak, enerji verim kayıpları simetrik olarak şarj ve deşarj bacaklarına paylaştırılmıştır. Batarya sağlığı (SOH) statik bir değer olmaktan çıkarılıp, her işlemde dinamik olarak yıpranacak şekilde (Simülasyon) güncellenmiştir.
-- **Merkezi URL Yönetimi ve CORS Optimizasyonu:** Frontend kodlarının içine gömülü olan sabit (hardcoded) `localhost` adresleri temizlenmiş ve tek bir merkezden yönetilmek üzere `.env` (`VITE_API_URL`) mimarisine geçilmiştir. Backend güvenlik duvarı (CORS), projenin yayına alınacağı `https://abdullahyuzbasi.github.io` adresine güvenli erişim verecek şekilde güncellenmiştir.
+## 🧪 Otomatik Birim Testleri (Unit Tests)
 
-## 🛠 Kullanılan Teknolojiler
+Sistemin çekirdek iş kurallarını ve dayanıklılığını kanıtlamak için xUnit kullanarak aşağıdaki 5 otomatik test senaryosunu kurguladım:
 
-**Frontend:**
-- React.js & React Router DOM (Mimari ve Yönlendirme)
-- Tailwind CSS (Stil ve Responsive Tasarım)
-- Recharts (Dinamik Veri ve Grafik Görselleştirme)
-- Lucide React (Vektörel Modern İkonlar)
-- Vite (.env Yönetimi ve Hızlı Derleme)
+1. **Negatif İşlem Koruması:** Sisteme negatif değer (Örn: -20) gönderildiğinde işlemin engellendiğini doğruladım.
+2. **Aşırı Şarj (Overcharge) Koruması:** Maksimum güvenlik sınırını aşacak bir şarj komutunda sistemin işlemi reddettiğini test ettim.
+3. **Aşırı Deşarj (Deep Discharge) Koruması:** Minimum sınırın altına inilmesine sebep olacak komutlarda sistemin işleme izin vermediğini ölçümledim.
+4. **Asimetrik Verim Kaybı:** Verim kaybının asimetrik olarak ikiye bölündüğünü ve bataryaya net aktarımın fiziki kurallara uygun yapıldığını doğruladım.
+5. **Batarya Sağlığı (SOH) Eskimesi:** Başarılı işlemler sonrası SOH değerinin dinamik olarak düştüğünü test ettim.
 
-**Backend:**
-- **.NET 10 (C#)**
-- ASP.NET Core Web API (Controllers & Singleton In-Memory Services)
-- DataAnnotations (Model Validation Koruması)
+**Nasıl Çalıştırılır?**
+Yeni bir terminal üzerinden test klasörüne girip test robotunu başlatabilirsiniz:
+1. `cd Enerji_Backend.Tests`
+2. `dotnet test`
 
 ## ⚙️ Kurulum ve Çalıştırma
 
@@ -61,4 +52,4 @@ Sistemin .NET API üzerinden çalışan yetkilendirme (Login) kısmını uçtan 
 
 ---
 
-*Not: Bu **v3.3** sürümü; önceki mimarinin üzerine tüm "Düşük Öncelikli", "Orta Öncelikli" ve "Yüksek Öncelikli" güvenlik/matematik zafiyetlerinin giderildiği, URL'lerin merkezileştirildiği ve Enterprise (Kurumsal) kodlama standartlarının uygulandığı en güncel, stabil halidir.*
+*Not: Bu **v3.4** sürümü; önceki mimarinin üzerine otomatik birim testlerinin (Unit Test) eklendiği, güvenlik şeffaflığının sağlandığı stabil sürümdür.*
